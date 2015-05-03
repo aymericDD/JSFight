@@ -1,0 +1,15 @@
+div#login.container(ng-controller="LoginCtrl")
+   div.row
+      div.col-md-4.col-md-offset-4
+         h2 Login title
+         p(class="loginMessage bg-{{ messageType }}") {{ message }}
+         form(name="authForm" ng-submit="doLogin()")
+            div.form-group
+               label(for="usernameInput") {{ 'LOGIN_USERNAME' | translate }}
+               input.form-control(type="text" required="required" id="usernameInput" ng-model="user.username")
+            div.form-group
+               label(for="passwordInput") {{ 'LOGIN_PASSWORD' | translate }}
+               input.form-control(type="password" required="required" id="passwordInput" ng-model="user.password")
+            div.buttons.text-center
+               input.btn.btn-block.btn-primary.btn-success(type="submit" value="{{ 'LOGIN_LOGIN' | translate }}")
+               input.btn.btn-block.btn-info.btn-success(type="button" value="{{ 'LOGIN_REGISTER' | translate }}" ng-click="doRegister()")

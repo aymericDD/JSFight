@@ -6,9 +6,16 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var expressSessions = require('express-session');
+var mongoose = require('mongoose');
+var passport = require('passport');
+require("./authentication/passport-configuration");
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
+var defaultRoutes = require('./routes/defaultRoutes');
+var authApiV1 = require('./routes/authApiV1');
+
+/** MongoDB **/
+mongoose.connect('mongodb://localhost/JSFight');
 
 var app = express();
 
@@ -22,10 +29,17 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(expressSessions({
+  secret: "mySecret",
+  resave: false,
+  saveUninitialized: false
+}));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(passport.initialize());
+app.use(passport.session());
 
-app.use('/', routes);
-app.use('/users', users);
+app.use('/', defaultRoutes);
+app.use('/api/v1/auth', authApiV1);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -41,7 +55,7 @@ app.use(function(req, res, next) {
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
     res.status(err.status || 500);
-    res.render('error', {
+    res.render('content/full/error', {
       message: err.message,
       error: err
     });
@@ -52,7 +66,7 @@ if (app.get('env') === 'development') {
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
   res.status(err.status || 500);
-  res.render('error', {
+  res.render('content/full/error', {
     message: err.message,
     error: {}
   });

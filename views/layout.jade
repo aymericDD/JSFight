@@ -1,9 +1,36 @@
 doctype html
-html
+html(ng-app="JSFight" ng-strict-di="true")
   head
     title= title
     link(rel='stylesheet', href='/stylesheets/styles.css')
   body
     block header
+        nav.navbar.navbar-default.navbar-static-top
+          .container
+            .navbar-header
+              a.navbar-brand(href='#') {{ 'APP_TITLE' | translate }}
+            ul.nav.navbar-nav.navbar-right
+              li
+                a.language(ng-click="$root.setLanguage('fr')") {{ 'APP_FR' | translate }}
+              li
+                a.language(ng-click="$root.setLanguage('en')") {{ 'APP_EN' | translate }}
+              li(ng-if="$root.user")
+                p.navbar-text {{ 'APP_LOGGED_AS' | translate: $root.user }}
+              li(ng-if="$root.user")
+                a.logout(ng-click="$root.logout()") {{ 'APP_LOGOUT' | translate }}
+              li(ng-if="!$root.user")
+                p.navbar-text {{ 'APP_NOT_LOGGED' | translate }}
     block content
     block footer
+
+    div.container(ng-view)
+
+  script(type="text/javascript" src="/javascripts/languages/en.js")
+  script(type="text/javascript" src="/javascripts/languages/fr.js")
+  script(type="text/javascript" src="/javascripts/libs/angular.min.js")
+  script(type="text/javascript" src="/javascripts/libs/angular.route.min.js")
+  script(type="text/javascript" src="/javascripts/libs/angular.sanitize.min.js")
+  script(type="text/javascript" src="/javascripts/libs/angular.translate.min.js")
+  script(type="text/javascript" src="/javascripts/app.js")
+  script(type="text/javascript" src="/javascripts/factories/UserFactory.js")
+  script(type="text/javascript" src="/javascripts/controllers/LoginCtrl.js")

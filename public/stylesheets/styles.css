@@ -370,8 +370,8 @@ th {
 }
 @font-face {
   font-family: 'Glyphicons Halflings';
-  src: url(/fonts/bootstrap/glyphicons-halflings-regular.eot?1430570451);
-  src: url(/fonts/bootstrap/glyphicons-halflings-regular.eot?&1430570451#iefix) format("embedded-opentype"), url(/fonts/bootstrap/glyphicons-halflings-regular.woff2?1430570451) format("woff2"), url(/fonts/bootstrap/glyphicons-halflings-regular.woff?1430570451) format("woff"), url(/fonts/bootstrap/glyphicons-halflings-regular.ttf?1430570451) format("truetype"), url(/fonts/bootstrap/glyphicons-halflings-regular.svg?1430570451#glyphicons_halflingsregular) format("svg");
+  src: url(/fonts/bootstrap/glyphicons-halflings-regular.eot?1430577699);
+  src: url(/fonts/bootstrap/glyphicons-halflings-regular.eot?&1430577699#iefix) format("embedded-opentype"), url(/fonts/bootstrap/glyphicons-halflings-regular.woff2?1430577699) format("woff2"), url(/fonts/bootstrap/glyphicons-halflings-regular.woff?1430577699) format("woff"), url(/fonts/bootstrap/glyphicons-halflings-regular.ttf?1430577699) format("truetype"), url(/fonts/bootstrap/glyphicons-halflings-regular.svg?1430577699#glyphicons_halflingsregular) format("svg");
 }
 /* line 22, ../../../../../../../../../Library/Ruby/Gems/2.0.0/gems/bootstrap-sass-3.3.4.1/assets/stylesheets/bootstrap/_glyphicons.scss */
 .glyphicon {
@@ -8566,8 +8566,4 @@ button.close {
   .hidden-print {
     display: none !important;
   }
-}
-/* line 11, ../sass/styles.scss */
-div h1 {
-  color: red;
 }
