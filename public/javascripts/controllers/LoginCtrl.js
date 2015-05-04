@@ -44,7 +44,9 @@
                     $scope.messageType = "danger";
                     if (err.error === "USERNAME_ALREADY_TAKEN") {
                         $scope.message = "Username already in use";
-                    } else {
+                    } else if (err.error === "PASSWORD_NOT_EQUALS"){
+                        $scope.message = "Password does not match";
+                    }else {
                         $scope.message = "Error while creating your account, please check your informations";
                     }
                     return;

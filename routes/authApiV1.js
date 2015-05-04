@@ -55,6 +55,12 @@ router.route('/register')
     .post(function (req, res, next) {
         var user = new models.User(req.body);
 
+        if(user.password !== req.body.passwordCheck){
+            return res.status(40).json({
+                error: "PASSWORD_NOT_EQUALS"
+            })
+        }
+
         models.User.findOne({username: user.username}, function (err, existingUser) {
             if (err) {
                 return next(err);

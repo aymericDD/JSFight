@@ -8567,3 +8567,7 @@ button.close {
     display: none !important;
   }
 }
+/* line 10, ../sass/styles.scss */
+div#content-fight, #content-chat, #content-online, body {
+  height: 100vh;
+}
