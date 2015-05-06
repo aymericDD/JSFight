@@ -61,6 +61,12 @@ router.route('/register')
             })
         }
 
+        if(user.password === null || typeof user.password === 'undefined'){
+            return res.status(40).json({
+                error: "PASSWORD_CANT_BE_EMPTY"
+            })
+        }
+
         models.User.findOne({username: user.username}, function (err, existingUser) {
             if (err) {
                 return next(err);

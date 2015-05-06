@@ -47,12 +47,19 @@
             $scope.user.register(function (err, result) {
                 if (err) {
                     $scope.messageType = "danger";
-                    if (err.error === "USERNAME_ALREADY_TAKEN") {
-                        $scope.message = "Username already in use";
-                    } else if (err.error === "PASSWORD_NOT_EQUALS"){
-                        $scope.message = "Password does not match";
-                    }else {
-                        $scope.message = "Error while creating your account, please check your informations";
+                    switch (err.error) {
+                        case "USERNAME_ALREADY_TAKEN":
+                            $scope.message = "Username already in use";
+                            break;
+                        case "PASSWORD_NOT_EQUALS":
+                            $scope.message = "Password does not match";
+                            break;
+                        case "PASSWORD_CANT_BE_EMPTY":
+                            $scope.message = "Empty Password Field";
+                            break;
+                        default:
+                            $scope.message = "Error while creating your account, please check your informations";
+                            break;
                     }
                     return;
                 }
