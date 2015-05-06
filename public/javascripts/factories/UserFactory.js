@@ -16,7 +16,11 @@
             this.id = id;
         }
 
-        /** Instance Methods **/
+        /**
+         * Check if user is logged
+         *
+         * @param next
+         */
         User.prototype.login = function register(next) {
             var self = this;
 
@@ -29,6 +33,11 @@
                 });
         };
 
+        /**
+         * Save user into databases
+         *
+         * @param next
+         */
         User.prototype.register = function register(next) {
             var self = this;
 
@@ -41,7 +50,11 @@
                 });
         };
 
-        /** Static Methods **/
+        /**
+         * Return data user
+         *
+         * @param next
+         */
         User.load = function load(next) {
             $http.get("/api/v1/auth/me")
                 .success(function (data) {
@@ -52,6 +65,11 @@
                 });
         };
 
+        /**
+         * Return all user logout
+         *
+         * @param next
+         */
         User.logout = function load(next) {
             $http.get("/api/v1/auth/logout")
                 .success(function (data) {

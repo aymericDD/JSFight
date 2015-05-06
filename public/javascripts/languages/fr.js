@@ -14,5 +14,7 @@ window._ApplicationTranslations.fr = {
     LOGIN_USERNAME: "Nom d'utilisateur",
     LOGIN_PASSWORD: "Mot de passe",
     LOGIN_REGISTER: "Créer un compte",
-    LOGIN_LOGIN: "Se connecter"
+    LOGIN_LOGIN: "Se connecter",
+    CHAT_SEND: "Envoyer",
+    BTN_FIGHT: "Combat rapide"
 };

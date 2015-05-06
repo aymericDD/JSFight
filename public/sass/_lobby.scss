@@ -1,0 +1,18 @@
+div#content-fight, #content-chat, #content-online, body {
+  height: 100vh;
+}
+
+div {
+  &#content-fight, &#content-chat, &#content-online {
+    text-align: center;
+  }
+}
+
+div {
+  &#chatMessages {
+    height: 200px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    text-align: left;
+  }
+}

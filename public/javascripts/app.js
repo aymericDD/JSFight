@@ -5,11 +5,15 @@
 (function () {
 
     function ApplicationConfiguration($routeProvider, $translateProvider) {
-
         $translateProvider.translations('en', window._ApplicationTranslations.en);
         $translateProvider.translations('fr', window._ApplicationTranslations.fr);
         $translateProvider.preferredLanguage('fr');
 
+        /**
+         * Functions for check if user is not logged or if user is logged in
+         *
+         * @type {{checkNotLoggedIn: Function, checkLoggedIn: Function}}
+         */
         var routerResolvers = {
             checkNotLoggedIn: function checkNotLoggedIn($q, User, $location, $rootScope) {
                 return $q(function (resolve, reject) {
@@ -33,6 +37,10 @@
                             return reject();
                         }
 
+                        if(typeof $rootScope.socket !== 'undefined') {
+                            $rootScope.socket.connect();
+                        }
+
                         $rootScope.user = user;
 
                         return resolve();
@@ -44,6 +52,7 @@
         routerResolvers.checkNotLoggedIn.$inject = ["$q", "User", "$location", "$rootScope"];
         routerResolvers.checkLoggedIn.$inject = ["$q", "User", "$location", "$rootScope"];
 
+        // Build routes
         $routeProvider
             .when('/login', {
                 templateUrl: '/ng/login',
@@ -52,6 +61,7 @@
             })
             .when('/', {
                 templateUrl: '/ng/lobby',
+                controller: 'ChatCtrl',
                 resolve: { notLoggedIn: routerResolvers.checkLoggedIn }
             })
             .otherwise({
@@ -61,20 +71,33 @@
 
     ApplicationConfiguration.$inject = ["$routeProvider", "$translateProvider"];
 
+    /**
+     *
+     * Run application
+     *
+     * @param $rootScope
+     * @param User
+     * @param $location
+     * @param $translate
+     * @constructor
+     */
     function ApplicationRun($rootScope, User, $location, $translate) {
-        $rootScope.logout = function logout() {
-            User.logout(function (err, result) {
-                if (err) {
-                    console.log(err);
-                    return;
-                }
-                $rootScope.user = null;
+            $rootScope.logout = function logout() {
+                User.logout(function (err, result) {
+                    if (err) {
+                        console.log(err);
+                        return;
+                    }
 
-                return $location.path('/login');
-            });
-        };
+                    localStorage.removeItem("username", $rootScope.user);
 
-        $rootScope.setLanguage = function setLanguage(languageCode) {
+                    $rootScope.user = null;
+
+                    return $location.path('/login');
+                });
+            };
+
+            $rootScope.setLanguage = function setLanguage(languageCode) {
             $translate.use(languageCode);
         };
     }

@@ -19,6 +19,13 @@ mongoose.connect('mongodb://localhost/JSFight');
 
 var app = express();
 
+
+/** Socket.IO **/
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
+
+require('./helpers/socketHandler')(io);
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -73,4 +80,20 @@ app.use(function(err, req, res, next) {
 });
 
 
+server.listen(1337);
+
 module.exports = app;
+
+
+function gracefulExit() {
+    console.log("NodeJS server graceful exit...");
+    mongoose.connection.close(function () {
+        console.log("MongoDB server connection closed.");
+
+        console.log("Exiting node...");
+        process.exit(0);
+    });
+}
+
+process.on('SIGINT', gracefulExit).on('SIGTERM', gracefulExit);
+

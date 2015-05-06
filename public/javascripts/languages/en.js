@@ -14,5 +14,7 @@ window._ApplicationTranslations.en = {
     LOGIN_USERNAME: "Username",
     LOGIN_PASSWORD: "Password",
     LOGIN_REGISTER: "Register",
-    LOGIN_LOGIN: "Login"
+    LOGIN_LOGIN: "Login",
+    CHAT_SEND: "Send",
+    BTN_FIGHT: "Quick fight"
 };

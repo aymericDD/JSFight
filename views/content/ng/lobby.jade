@@ -1,4 +1,13 @@
 div.row
-   div.col-md-4#content-fight content-fight
-   div.col-md-4#content-chat content-chat
-   div.col-md-4#content-online content-online
+   div.col-md-4#content-fight
+       div#notification
+       button(type="button" class="btn btn-danger button-fight") {{ "BTN_FIGHT" | translate }}
+   div.col-md-4#content-chat
+    div#chatMessages
+    form(name="chatForm" ng-submit="sendMessage()")
+         div.input-group
+             input(type="text", name="message", id="message" class="form-control")
+             span.input-group-btn
+                input(class="btn btn-primary" type="submit" id="submit" name="submit" value="Send")
+   div.col-md-4#content-online
+      div

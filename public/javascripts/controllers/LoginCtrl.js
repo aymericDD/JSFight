@@ -6,11 +6,13 @@
     var _JSFight = angular.module("JSFight");
 
     function LoginCtrl($scope, User, $location) {
-
         $scope.user = new User();
         $scope.message = "";
         $scope.messageType = "";
 
+        /**
+         * Check if user is logged
+         */
         $scope.doLogin = function doLogin() {
             $scope.messageType = "";
             $scope.message = "";
@@ -35,6 +37,9 @@
             });
         };
 
+        /**
+         * Check if user can be registered and save it into databases
+         */
         $scope.doRegister = function doRegister() {
             $scope.messageType = "";
             $scope.message = "";
