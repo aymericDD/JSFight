@@ -1,13 +1,26 @@
-div.row
-   div.col-md-4#content-fight
-       div#notification
-       button(type="button" class="btn btn-danger button-fight") {{ "BTN_FIGHT" | translate }}
-   div.col-md-4#content-chat
-    div#chatMessages
-    form(name="chatForm" ng-submit="sendMessage()")
-         div.input-group
+div(layout="row" flex layout-margin)
+   div(layout="column" flex id="content-fight" layout-align="top top")
+       md-button(type="button" class="button-fight md-warn md-raised") {{ "BTN_FIGHT" | translate }}
+       div(layout="column" flex id="notification")
+   div(layout="column" flex id="content-chat" class="md-whiteframe-z1")
+    md-toolbar(layout-align="center center")
+       span(class="flex") Chat
+    md-content(layout="column" flex id="chatMessages" )
+       md-list
+           md-list-item(class="md-1-line" ng-repeat="ChatMessage in ChatMessages track by $index")
+             div(class="md-list-item-text")
+                strong {{ ChatMessage.username }}:&nbsp;
+                span {{ ChatMessage.message }}
+             md-divider(ng-if="!$last")
+    form(name="chatForm" ng-submit="sendMessage()" layout-padding)
+        md-input-container
+             label(for="message") Send
              input(type="text", name="message", id="message" class="form-control")
-             span.input-group-btn
-                input(class="btn btn-primary" type="submit" id="submit" name="submit" value="Send")
-   div.col-md-4#content-online
-      div
+   div(layout="column" flex id="content-online")
+       md-toolbar(layout-align="center center")
+            span(class="flex") Users online
+       md-content(layout="column" flex)
+        md-list
+           md-list-item(ng-repeat="userOnline in usersOnline track by $index")
+            div(class="md-list-item-text") {{ userOnline.username }}
+           md-divider(ng-if="!$last")

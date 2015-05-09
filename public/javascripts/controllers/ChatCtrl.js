@@ -5,80 +5,87 @@
 (function () {
     var _JSFight = angular.module("JSFight");
 
-    function ChatCtrl($rootScope, $scope, User, $location) {
+    function ChatCtrl($rootScope, $scope, User, Message) {
 
         $scope.socket = io.connect('http://localhost:1337', {"force new connection": true});
 
-        if($scope.socket.disconnect) {
-            $scope.socket.connect();
-        }
-
         $scope.container = document.getElementById("chatMessages");
-        $scope.containerUsers = document.getElementById("content-online");
         $scope.containerNotif = document.getElementById("notification");
-        $scope.statusConnected = document.getElementById("statusConnected");
-        $scope.statusDisconnected = document.getElementById("statusDisconnected");
         $scope.form = document.forms.chatForm;
-        $scope.username;
-        $scope.messages = [];
+        $scope.user = new User($rootScope.user.username, null, null, $rootScope.user.id);
+        $scope.usersOnline = [];
+        $scope.ChatMessages = [];
 
         /**
-         *  On username requested
+         *  On user request
          */
-        $scope.socket.on('USERNAME_REQUIRED', function () {
+        $scope.socket.on('USER_REQUIRED', function () {
 
-            // If username is not defined get username
-            $scope.username = (localStorage.getItem("username"))? localStorage.getItem("username") : $scope.user.username;
-
-            $scope.socket.emit('USERNAME_CHOSEN', $scope.username);
+            // If user is not defined get user
+            $scope.socket.emit('USER_CHOSEN', $scope.user);
 
         });
 
         /**
          * On validation user
          */
-        $scope.socket.on('USERNAME_ACCEPTED', function (oldMessages, usersname) {
+        $scope.socket.on('USER_ACCEPTED', function (oldMessages, users) {
             var i;
+            oldMessages.forEach(function(message){
+                $scope.ChatMessages.push(new Message(message.username, message.message, message.timestamp, message._id));
+            });
 
-            $scope.messages = oldMessages;
-            $scope.usersName = usersname;
+            users.forEach(function(user){
+                $scope.usersOnline.push(new User(user.username, null, null, user.id));
+            });
 
-            $scope.setUsernameLocalStorage($scope.username);
+            $scope.$digest();
 
-            $scope.printMessages();
+            $scope.container.scrollTop = $scope.container.scrollHeight;
 
-            $scope.printUsersOnline();
+            setOnline();
 
-            $scope.setOnline();
         });
+
 
         /**
          * On new user
          */
-        $scope.socket.on('NEW_USER', function (data) {
+        $scope.socket.on('NEW_USER', function (user) {
 
-            $scope.usersName.push(data);
-            $scope.addUser("NEW_USER", data);
+            if(user) {
+                var newUser = new User(user.username, null, null, user.id);
+                $scope.usersOnline.push(newUser);
+                $scope.$digest();
+            }
 
         });
 
         /**
          * On new message submit by another user
          */
-        $scope.socket.on('NEW_MESSAGE', function (data) {
+        $scope.socket.on('NEW_MESSAGE', function (message) {
 
-            $scope.addMessage("NEW_MESSAGE", data.username, data.message);
-            $scope.messages.push(data);
+            if(message) {
+                $scope.ChatMessages.push(new Message(message.username, message.message, message.timestamp, message._id));
+                $scope.$digest();
+                $scope.container.scrollTop = $scope.container.scrollHeight;
+            }
 
         });
 
         /**
          * When user is disconnected update list user connected
          */
-        $scope.socket.on('USER_DISCONNECTED', function(data) {
-            if(data !== null) {
-                $scope.usersName.splice($scope.usersName.indexOf(data), 1);
-                $scope.printUsersOnline();
+        $scope.socket.on('USER_DISCONNECTED', function(user) {
+            if(user) {
+                for(var i =  $scope.usersOnline.length - 1; i >= 0; i--) {
+                    if( $scope.usersOnline[i].id === user.id) {
+                        $scope.usersOnline.splice(i, 1);
+                    }
+                }
+                $scope.$digest();
+
             }
         });
 
@@ -86,21 +93,21 @@
          * On connect
          */
         $scope.socket.on("connect", function() {
-            $scope.setOnline();
+            setOnline();
         });
 
         /**
          * On disconnect
          */
         $scope.socket.on('disconnect', function () {
-            $scope.setOffline();
+            setOffline();
         });
 
         /**
          * On connect error
          */
         $scope.socket.on('connect_failed', function () {
-            $scope.setOffline();
+            setOffline();
         });
 
         /**
@@ -115,116 +122,27 @@
         };
 
         /**
-         * Show all message in dom
-         */
-        $scope.printMessages = function printMessages() {
-            var i;
-
-            //Cleaning chat area
-            while ($scope.container.firstChild) {
-                $scope.container.removeChild($scope.container.firstChild);
-            }
-
-            //Printing all messages
-            for (i = 0; i < $scope.messages.length; i += 1) {
-                $scope.addMessage("NEW_MESSAGE", $scope.messages[i].username, $scope.messages[i].message);
-            }
-
-        };
-
-        /**
-         * Show all user connected in dom
-         */
-        $scope.printUsersOnline = function printUsersOnline() {
-            var i;
-
-            //Cleaning users online area
-            while ($scope.containerUsers.firstChild) {
-                $scope.containerUsers.removeChild($scope.containerUsers.firstChild);
-            }
-
-            //Printing all users online
-            for (i = 0; i < $scope.usersName.length; i += 1) {
-                $scope.addUser("NEW_USER", $scope.usersName[i]);
-            }
-
-        };
-
-        /**
-         * Add a message into dom
-         *
-         * @param string type ex(NEW_MESSAGE)
-         * @param string username
-         * @param string message
-         */
-        $scope.addMessage = function addMessage(type, username, message)
-        {
-            var element = document.createElement("p");
-            if(type === "NEW_MESSAGE") {
-                element.innerHTML = "<strong>" + username + "</strong> : " + message;
-            }else {
-                element = null;
-                return;
-            }
-
-            $scope.container.appendChild(element);
-            element = null;
-            $scope.container.scrollTop = $scope.container.scrollHeight;
-
-        };
-
-        /**
-         * Add user into dom
-         *
-         * @param string type ex(NEW_USER)
-         * @param username
-         */
-        $scope.addUser = function addUser(type, username)
-        {
-            var element = document.createElement("p");
-            if(type === "NEW_USER") {
-                element.innerHTML = username;
-            }else {
-                element = null;
-                return;
-            }
-
-            $scope.containerUsers.appendChild(element);
-
-            element = null;
-        };
-
-        /**
          * Set online status
          */
-        $scope.setOnline = function setOnline() {
+        function setOnline() {
             $scope.connected = true;
-            $scope.createNotification("growl", "scale", "notice", "Online", "online");
+            popNotification("growl", "scale", "notice", "Online", "online");
         };
 
         /**
          * Set offline status
          */
-        $scope.setOffline = function setOffline() {
+        function setOffline() {
             $scope.connected = false;
-            $scope.createNotification("growl", "scale", "notice", "Offline", "offline");
+            popNotification("growl", "scale", "notice", "Offline", "offline");
         }
-
-        /**
-         * Set the username into localstorage
-         * @param string username
-         */
-        $scope.setUsernameLocalStorage = function setUsernameLocalStorage(username) {
-            window.localStorage.setItem("username", username);
-        };
-
 
         $rootScope.DisconnectUser = function DisconnectUser() {
             $scope.socket.disconnect();
             $rootScope.logout();
         };
 
-        $scope.createNotification = function setNotification(layout, effect, type, message, $class) {
+        function popNotification(layout, effect, type, message, $class) {
             var Notifs = $scope.containerNotif.getElementsByTagName("div");
             var Notif = null;
 
@@ -255,8 +173,9 @@
 
     }
 
+
     /** Angular.JS Dependency Injection **/
-    ChatCtrl.$inject = ["$rootScope", "$scope", "User", "$location"];
+    ChatCtrl.$inject = ["$rootScope", "$scope", "User", "Message"];
 
     /** Angular.JS Controller Registration **/
     _JSFight.controller("ChatCtrl", ChatCtrl);

@@ -104,7 +104,7 @@
 
     ApplicationRun.$inject = ["$rootScope", "User", "$location", "$translate"];
 
-    angular.module("JSFight", ['ngSanitize', 'ngRoute', 'pascalprecht.translate'])
+    angular.module("JSFight", ['ngSanitize', 'ngRoute', 'ngMessages', 'ngMaterial', 'pascalprecht.translate'])
         .config(ApplicationConfiguration)
         .run(ApplicationRun);
 }());
