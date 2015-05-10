@@ -5,7 +5,7 @@
 (function () {
     var _JSFight = angular.module("JSFight");
 
-    function ChatCtrl($rootScope, $scope, User, Message, $mdToast, $animate) {
+    function ChatCtrl($rootScope, $scope, User, Message, $mdToast, $animate, $mdDialog) {
 
         $scope.socket = io.connect('http://localhost:1337', {"force new connection": true});
 
@@ -23,24 +23,6 @@
             top: false,
             left: true,
             right: false
-        };
-        $scope.showSimpleToast = function(message) {
-            if(message){
-                var toast = $mdToast.simple()
-                    .content(message)
-                    .action('Close')
-                    .highlightAction(false)
-                    .position($scope.getToastPosition());
-                $mdToast.show(toast).then(function() {
-                    $mdToast.hide();
-                });
-            }
-        };
-
-        $scope.getToastPosition = function() {
-            return Object.keys($scope.toastPosition)
-                .filter(function(pos) { return $scope.toastPosition[pos]; })
-                .join(' ');
         };
 
         /**
@@ -121,6 +103,12 @@
             }
         });
 
+        $scope.socket.on("INVITATION_FIGHT", function(user){
+            if(user) {
+                $scope.showConfirm(user);
+            }
+        });
+
         /**
          * On connect
          */
@@ -153,6 +141,47 @@
             }
         };
 
+        $scope.quickFight = function quickFight() {
+            $scope.socket.emit("QUICK_FIGHT", $scope.user);
+        };
+
+        $rootScope.DisconnectUser = function DisconnectUser() {
+            $scope.socket.disconnect();
+            $rootScope.logout();
+        };
+
+        $scope.showSimpleToast = function(message) {
+            if(message){
+                var toast = $mdToast.simple()
+                    .content(message)
+                    .action('Close')
+                    .highlightAction(false)
+                    .position($scope.getToastPosition());
+                $mdToast.show(toast).then(function() {
+                    $mdToast.hide();
+                });
+            }
+        };
+        $scope.getToastPosition = function() {
+            return Object.keys($scope.toastPosition)
+                .filter(function(pos) { return $scope.toastPosition[pos]; })
+                .join(' ');
+        };
+
+        $scope.showConfirm = function(user) {
+            // Appending dialog to document.body to cover sidenav in docs app
+            var confirm = $mdDialog.confirm()
+                .parent(angular.element(document.body))
+                .title(user.username + ' invited you to fight with him')
+                .ok('Fight !')
+                .cancel('Refused !')
+            $mdDialog.show(confirm).then(function() {
+                return $scope.socket.emit("FIGHT_ACCEPTED", $scope.user, user);
+            }, function() {
+                return false;
+            });
+        };
+
         /**
          * Set online status
          */
@@ -173,16 +202,11 @@
             }
         }
 
-        $rootScope.DisconnectUser = function DisconnectUser() {
-            $scope.socket.disconnect();
-            $rootScope.logout();
-        };
-
     }
 
 
     /** Angular.JS Dependency Injection **/
-    ChatCtrl.$inject = ["$rootScope", "$scope", "User", "Message", "$mdToast", "$animate"];
+    ChatCtrl.$inject = ["$rootScope", "$scope", "User", "Message", "$mdToast", "$animate", "$mdDialog"];
 
     /** Angular.JS Controller Registration **/
     _JSFight.controller("ChatCtrl", ChatCtrl);

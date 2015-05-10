@@ -64,6 +64,18 @@ module.exports = function (io) {
             }
         });
 
+        socket.on('FIGHT_ACCEPTED', function(user1, user2) {
+            if(user1 && user2) {
+
+            }
+        });
+
+        socket.on("QUICK_FIGHT", function(sender){
+            getRandomUserOnline(sender, function(receiver) {
+                receiver.emit("INVITATION_FIGHT", user)
+            });
+        });
+
         /**
          * When user is disconnected, remove socket id in users list,
          * remove userName in usersName list
@@ -81,5 +93,26 @@ module.exports = function (io) {
             }
 
         });
+
+        /**
+         * Get random user online and apply function callback
+         *
+         * @param sender
+         * @param callback
+         * @returns {*}
+         */
+        function getRandomUserOnline(sender, callback) {
+            if(users.length > 1) {
+                var receiver = users[Math.floor(Math.random()*users.length)];
+                if(users[id].id === receiver.id) {
+                    getRandomUserOnline(sender, callback);
+                }else {
+                    return callback(receiver);
+                }
+            }
+
+            return false;
+        };
+
     });
 };

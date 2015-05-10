@@ -9,6 +9,7 @@
         $scope.user = new User();
         $scope.message = "";
         $scope.messageType = "";
+        $scope.loadForm=false;
 
         /**
          * Check if user is logged
@@ -16,9 +17,11 @@
         $scope.doLogin = function doLogin() {
             $scope.messageType = "";
             $scope.message = "";
+            $scope.loadForm=true;
 
             $scope.user.login(function (err, result) {
                 if (err) {
+                    $scope.loadForm=false;
                     $scope.messageType = "danger";
                     if (err.error === "INVALID_PASSWORD") {
                         $scope.message = "Invalid Password";
@@ -43,9 +46,11 @@
         $scope.doRegister = function doRegister() {
             $scope.messageType = "";
             $scope.message = "";
+            $scope.loadForm=true;
 
             $scope.user.register(function (err, result) {
                 if (err) {
+                    $scope.loadForm=false;
                     $scope.messageType = "danger";
                     switch (err.error) {
                         case "USERNAME_ALREADY_TAKEN":
