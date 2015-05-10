@@ -5,7 +5,7 @@
 (function () {
     var _JSFight = angular.module("JSFight");
 
-    function ChatCtrl($rootScope, $scope, User, Message) {
+    function ChatCtrl($rootScope, $scope, User, Message, $mdToast, $animate) {
 
         $scope.socket = io.connect('http://localhost:1337', {"force new connection": true});
 
@@ -15,6 +15,33 @@
         $scope.user = new User($rootScope.user.username, null, null, $rootScope.user.id);
         $scope.usersOnline = [];
         $scope.ChatMessages = [];
+
+        $scope.loading = true;
+
+        $scope.toastPosition = {
+            bottom: true,
+            top: false,
+            left: true,
+            right: false
+        };
+        $scope.showSimpleToast = function(message) {
+            if(message){
+                var toast = $mdToast.simple()
+                    .content(message)
+                    .action('Close')
+                    .highlightAction(false)
+                    .position($scope.getToastPosition());
+                $mdToast.show(toast).then(function() {
+                    $mdToast.hide();
+                });
+            }
+        };
+
+        $scope.getToastPosition = function() {
+            return Object.keys($scope.toastPosition)
+                .filter(function(pos) { return $scope.toastPosition[pos]; })
+                .join(' ');
+        };
 
         /**
          *  On user request
@@ -30,6 +57,9 @@
          * On validation user
          */
         $scope.socket.on('USER_ACCEPTED', function (oldMessages, users) {
+            $scope.ChatMessages = [];
+            $scope.usersOnline = [];
+
             var i;
             oldMessages.forEach(function(message){
                 $scope.ChatMessages.push(new Message(message.username, message.message, message.timestamp, message._id));
@@ -38,6 +68,8 @@
             users.forEach(function(user){
                 $scope.usersOnline.push(new User(user.username, null, null, user.id));
             });
+
+            $scope.loading = false;
 
             $scope.$digest();
 
@@ -125,16 +157,20 @@
          * Set online status
          */
         function setOnline() {
-            $scope.connected = true;
-            popNotification("growl", "scale", "notice", "Online", "online");
+            if(!$scope.connected) {
+                $scope.connected = true;
+                $scope.showSimpleToast('Online');
+            }
         };
 
         /**
          * Set offline status
          */
         function setOffline() {
-            $scope.connected = false;
-            popNotification("growl", "scale", "notice", "Offline", "offline");
+            if($scope.connected) {
+                $scope.connected = false;
+                $scope.showSimpleToast("Offline");
+            }
         }
 
         $rootScope.DisconnectUser = function DisconnectUser() {
@@ -142,40 +178,11 @@
             $rootScope.logout();
         };
 
-        function popNotification(layout, effect, type, message, $class) {
-            var Notifs = $scope.containerNotif.getElementsByTagName("div");
-            var Notif = null;
-
-            if(typeof Notifs !== 'undefined') {
-                Notif = Notifs[0];
-
-                if(typeof Notif !== 'undefined') {
-                    if(Notif.classList.contains($class)){
-                        return false;
-                    }
-                }
-            }
-
-            var ntf = document.createElement('div');
-            ntf.className = 'ns-box ns-' + layout + ' ns-effect-' + effect + ' ns-type-' + type + ' ns-show ' + $class;
-            var strinner = '<div class="ns-box-inner">';
-            strinner += message;
-            strinner += '</div>';
-            strinner += '<span class="ns-close"></span></div>';
-            ntf.innerHTML = strinner;
-
-            ntf.querySelector('.ns-close').addEventListener('click', function(){this.parentNode.remove()});
-
-            $scope.containerNotif.innerHTML = "";
-            $scope.containerNotif.appendChild(ntf);
-
-        };
-
     }
 
 
     /** Angular.JS Dependency Injection **/
-    ChatCtrl.$inject = ["$rootScope", "$scope", "User", "Message"];
+    ChatCtrl.$inject = ["$rootScope", "$scope", "User", "Message", "$mdToast", "$animate"];
 
     /** Angular.JS Controller Registration **/
     _JSFight.controller("ChatCtrl", ChatCtrl);

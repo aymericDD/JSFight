@@ -16,5 +16,7 @@ window._ApplicationTranslations.en = {
     LOGIN_REGISTER: "Register",
     LOGIN_LOGIN: "Login",
     CHAT_SEND: "Send",
+    CHAT_TITLE: "Chat",
+    CHAT_USERS_ONLINE: "Users online",
     BTN_FIGHT: "Quick fight"
 };

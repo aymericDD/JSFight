@@ -16,5 +16,7 @@ window._ApplicationTranslations.fr = {
     LOGIN_REGISTER: "Créer un compte",
     LOGIN_LOGIN: "Se connecter",
     CHAT_SEND: "Envoyer",
+    CHAT_TITLE: "Chat",
+    CHAT_USERS_ONLINE: "Utilisateurs connectés",
     BTN_FIGHT: "Combat rapide"
 };
