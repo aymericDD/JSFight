@@ -24,7 +24,7 @@ div(ng-controller="LoginCtrl" layout="row" flex class="container" id="login")
                         md-button(type="submit" class="md-raised md-primary") {{ 'LOGIN_LOGIN' | translate }}
               md-tab(label="Register")
                   md-content(layout-padding)
-                     form(name="authForm" ng-submit="doRegister()")
+                     form(name="registerForm" ng-submit="doRegister()")
                         md-input-container
                            label(for="usernameInput") {{ 'LOGIN_USERNAME' | translate }}
                            input(md-maxlength="30" required type="text" id="usernameInput" ng-model="user.username")

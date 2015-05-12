@@ -59,6 +59,11 @@
                 controller: 'LoginCtrl',
                 resolve: { notLoggedIn: routerResolvers.checkNotLoggedIn }
             })
+            .when('/game/:room', {
+                templateUrl: '/ng/game',
+                controller: 'GameCtrl',
+                resolve: { notLoggedIn: routerResolvers.checkLoggedIn }
+            })
             .when('/', {
                 templateUrl: '/ng/lobby',
                 controller: 'ChatCtrl',
@@ -82,6 +87,7 @@
      * @constructor
      */
     function ApplicationRun($rootScope, User, $location, $translate) {
+            $rootScope.disabledLogout = false;
             $rootScope.logout = function logout() {
                 User.logout(function (err, result) {
                     if (err) {

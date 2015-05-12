@@ -14,7 +14,8 @@ html(ng-app="JSFight" ng-strict-di="true")
           md-button(ng-click="$root.setLanguage('fr')" ) {{ 'APP_FR' | translate }}
           md-button(ng-click="$root.setLanguage('en')") {{ 'APP_EN' | translate }}
           span(ng-if="$root.user" ng-disabled="true") {{ 'APP_LOGGED_AS' | translate: $root.user }}
-          md-button(ng-if="$root.user" ng-click="$root.DisconnectUser()") {{ 'APP_LOGOUT' | translate }}
+          md-button(ng-if="$root.user && !$root.disabledLogout" ng-click="$root.DisconnectUser()") {{ 'APP_LOGOUT' | translate }}
+          md-button(ng-if="$root.user && $root.disabledLogout" ng-disabled="true" ng-click="$root.DisconnectUser()") {{ 'APP_LOGOUT' | translate }}
           md-button(ng-if="!$root.user" ng-disabled="true" ) {{ 'APP_NOT_LOGGED' | translate }}
     block content
     block footer
@@ -37,3 +38,4 @@ html(ng-app="JSFight" ng-strict-di="true")
   script(type="text/javascript" src="/javascripts/factories/MessageFactory.js")
   script(type="text/javascript" src="/javascripts/controllers/LoginCtrl.js")
   script(type="text/javascript" src="/javascripts/controllers/ChatCtrl.js")
+  script(type="text/javascript" src="/javascripts/controllers/GameCtrl.js")

@@ -5,16 +5,18 @@
 (function () {
     var _JSFight = angular.module("JSFight");
 
-    function ChatCtrl($rootScope, $scope, User, Message, $mdToast, $animate, $mdDialog) {
+    function ChatCtrl($rootScope, $scope, $location, User, Message, $mdToast, $animate, $mdDialog) {
 
         $scope.socket = io.connect('http://localhost:1337', {"force new connection": true});
 
         $scope.container = document.getElementById("chatMessages");
         $scope.containerNotif = document.getElementById("notification");
         $scope.form = document.forms.chatForm;
-        $scope.user = new User($rootScope.user.username, null, null, $rootScope.user.id);
+        $scope.user = new User($rootScope.user.username, $rootScope.user.nbParts,  $rootScope.user.nbWins,  $rootScope.user.nbLoss, $rootScope.user.id);
         $scope.usersOnline = [];
         $scope.ChatMessages = [];
+
+        $rootScope.disabledLogout = false;
 
         $scope.loading = true;
 
@@ -48,7 +50,7 @@
             });
 
             users.forEach(function(user){
-                $scope.usersOnline.push(new User(user.username, null, null, user.id));
+                $scope.usersOnline.push(new User(user.username, user.nbParts, user.nbWins, user.nbLoss, user.id));
             });
 
             $scope.loading = false;
@@ -68,8 +70,20 @@
         $scope.socket.on('NEW_USER', function (user) {
 
             if(user) {
-                var newUser = new User(user.username, null, null, user.id);
-                $scope.usersOnline.push(newUser);
+                var newUser = new User(user.username, user.nbParts, user.nbWins, user.nbLoss, user.id);
+                var userAlreadyExist = false;
+                $scope.usersOnline.forEach(function($user, index, array){
+                    if($user.id === newUser.id) {
+                        userAlreadyExist = true;
+                    }
+
+                    if (index === (array.length - 1)) {
+                        if(!userAlreadyExist){
+                            $scope.usersOnline.push(newUser);
+                        }
+                    }
+
+                });
                 $scope.$digest();
             }
 
@@ -96,16 +110,24 @@
                 for(var i =  $scope.usersOnline.length - 1; i >= 0; i--) {
                     if( $scope.usersOnline[i].id === user.id) {
                         $scope.usersOnline.splice(i, 1);
+                        $scope.$digest();
                     }
                 }
-                $scope.$digest();
 
             }
         });
 
-        $scope.socket.on("INVITATION_FIGHT", function(user){
-            if(user) {
-                $scope.showConfirm(user);
+        $scope.socket.on("INVITATION_FIGHT", function(data){
+            if(data) {
+                $scope.showConfirm(data.user, data.socketId);
+            }
+        });
+
+        $scope.socket.on("FIGHT", function(room){
+            if(room) {
+                $scope.socket.disconnect();
+                $location.path('/game/' + room);
+                $scope.$apply();
             }
         });
 
@@ -168,7 +190,7 @@
                 .join(' ');
         };
 
-        $scope.showConfirm = function(user) {
+        $scope.showConfirm = function(user, socketId) {
             // Appending dialog to document.body to cover sidenav in docs app
             var confirm = $mdDialog.confirm()
                 .parent(angular.element(document.body))
@@ -176,7 +198,7 @@
                 .ok('Fight !')
                 .cancel('Refused !')
             $mdDialog.show(confirm).then(function() {
-                return $scope.socket.emit("FIGHT_ACCEPTED", $scope.user, user);
+                return $scope.socket.emit("FIGHT_ACCEPTED", user, $scope.user, socketId);
             }, function() {
                 return false;
             });
@@ -188,7 +210,7 @@
         function setOnline() {
             if(!$scope.connected) {
                 $scope.connected = true;
-                $scope.showSimpleToast('Online');
+                $scope.showSimpleToast('Online chat');
             }
         };
 
@@ -198,7 +220,7 @@
         function setOffline() {
             if($scope.connected) {
                 $scope.connected = false;
-                $scope.showSimpleToast("Offline");
+                $scope.showSimpleToast("Offline chat");
             }
         }
 
@@ -206,7 +228,7 @@
 
 
     /** Angular.JS Dependency Injection **/
-    ChatCtrl.$inject = ["$rootScope", "$scope", "User", "Message", "$mdToast", "$animate", "$mdDialog"];
+    ChatCtrl.$inject = ["$rootScope", "$scope", "$location", "User", "Message", "$mdToast", "$animate", "$mdDialog"];
 
     /** Angular.JS Controller Registration **/
     _JSFight.controller("ChatCtrl", ChatCtrl);

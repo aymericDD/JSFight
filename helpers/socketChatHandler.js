@@ -2,6 +2,7 @@
 
 var models = require('../models'),
     users = [],
+    usersPossibleFight = [],
     usersOnline = [];
 
 module.exports = function (io) {
@@ -10,6 +11,7 @@ module.exports = function (io) {
             user;
 
         users.push(socket);
+        usersPossibleFight.push(socket);
         id = users.indexOf(socket);
 
         /**
@@ -64,15 +66,36 @@ module.exports = function (io) {
             }
         });
 
-        socket.on('FIGHT_ACCEPTED', function(user1, user2) {
-            if(user1 && user2) {
+        socket.on('FIGHT_ACCEPTED', function(user1, user2, user1SocketId) {
+            if(user1 && user2 && user1SocketId) {
+                // Get socket user1 and remove it to userPossibleFight
+                var socketUser1 = getSocket(user1SocketId, usersPossibleFight);
+
+                if(typeof socketUser1 !== 'undefined') {
+                    var indexUser1 = usersPossibleFight.indexOf(socketUser1);
+                    usersPossibleFight.splice(indexUser1, 1);
+                    // Get socket user2 and remove it to userPossibleFight
+                    var socketUser2 = getSocket(socket.id, usersPossibleFight);
+
+                    if(typeof socketUser2 !== 'undefined'){
+                        var indexUser2 = usersPossibleFight.indexOf(socketUser2);
+                        usersPossibleFight.splice(indexUser2, 1);
+                        // Construct future room
+                        var room = user1.id + user2.id;
+                        // Emit to users socket
+                        socketUser1.emit("FIGHT", room);
+                        socketUser2.emit("FIGHT", room);
+                        return true;
+                    }
+                }
+                return false;
 
             }
         });
 
         socket.on("QUICK_FIGHT", function(sender){
             getRandomUserOnline(sender, function(receiver) {
-                receiver.emit("INVITATION_FIGHT", user)
+                receiver.emit("INVITATION_FIGHT", {user: user, socketId: socket.id});
             });
         });
 
@@ -84,11 +107,16 @@ module.exports = function (io) {
         socket.on('disconnect', function () {
 
             if(user) {
-                users.splice(id, 1);
-                var indexUser = usersOnline.indexOf(user);
-                if(indexUser > - 1) {
-                    usersOnline.splice(indexUser, 1);
-                }
+                // Remove socket user into users array sockets
+                users.forEach(function($socket, index, array){
+                    if($socket.id === socket.id){
+                        users.splice(index, 1);
+                    }
+                });
+                // Remove user in array
+                removeUserToArray(user, usersOnline);
+                // Remove socket in usersPossibleFight
+                removeUserToArray(socket, usersPossibleFight);
                 io.emit("USER_DISCONNECTED", user);
             }
 
@@ -102,16 +130,34 @@ module.exports = function (io) {
          * @returns {*}
          */
         function getRandomUserOnline(sender, callback) {
-            if(users.length > 1) {
-                var receiver = users[Math.floor(Math.random()*users.length)];
-                if(users[id].id === receiver.id) {
-                    getRandomUserOnline(sender, callback);
+            if(usersPossibleFight.length > 1) {
+                var receiver = usersPossibleFight[Math.floor(Math.random()*usersPossibleFight.length)];
+                if(usersPossibleFight[id].id === receiver.id) {
+                    return getRandomUserOnline(sender, callback);
                 }else {
                     return callback(receiver);
                 }
             }
-
             return false;
+        };
+
+        function removeUserToArray($user, $array) {
+            var indexUser = $array.indexOf($user);
+            if(indexUser > - 1) {
+                $array.splice(indexUser, 1);
+                return true;
+            }
+            return false;
+        };
+
+        function getSocket($value, $array) {
+            var result = false;
+            $array.forEach(function($item, index, array){
+                if($item.id === $value){
+                    result = $item;
+                }
+            });
+            return result;
         };
 
     });

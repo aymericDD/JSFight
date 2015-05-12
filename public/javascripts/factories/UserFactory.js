@@ -6,13 +6,11 @@
     var _JSFight = angular.module("JSFight");
 
     function UserFactory($http) {
-        function User(username, password, passwordCheck, id) {
+        function User(username, nbParts, nbWins, nbLoss, id) {
             this.username = username;
-            this.password = password;
-            this.passwordCheck = passwordCheck;
-            this.nbParts = 0;
-            this.nbWins = 0;
-            this.nbLoss = 0;
+            this.nbParts = nbParts;
+            this.nbWins = nbWins;
+            this.nbLoss = nbLoss;
             this.id = id;
         }
 

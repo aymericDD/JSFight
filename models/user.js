@@ -6,9 +6,9 @@ var mongoose = require("mongoose"),
     userSchema = new Schema({
         username: {type: String, index: true, required: true},
         password: {type: String, required: true},
-        nbParts: {type: Number},
-        nbWins: {type: Number},
-        nbLoss: {type: Number}
+        nbParts: {type: Number, default: 0},
+        nbWins: {type: Number, default: 0},
+        nbLoss: {type: Number, default: 0}
     });
 
 userSchema.methods.hashString = function (password, next) {

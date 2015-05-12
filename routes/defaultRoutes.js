@@ -16,4 +16,12 @@ router.get('/ng/lobby', function (req, res, next) {
     res.render('content/ng/lobby');
 });
 
+router.get('/ng/game', function (req, res, next) {
+    res.render('content/ng/game');
+});
+
+router.get('/images/:image', function (req, res, next) {
+    res.render('/public/images/');
+});
+
 module.exports = router;

@@ -24,7 +24,23 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
-require('./helpers/socketHandler')(io);
+var http=require('http');
+var ports = [1337, 3333];
+var servers = [];
+var s;
+ports.forEach(function(port) {
+    s = http.Server(app);
+    var io = require('socket.io')(s);
+    if(port === 1337) {
+        require('./helpers/socketChatHandler')(io);
+    }
+    if(port == 3333) {
+        require('./helpers/socketGameHandler')(io);
+    }
+    s.listen(port);
+    servers.push(s);
+});
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -79,10 +95,6 @@ app.use(function(err, req, res, next) {
   });
 });
 
-
-server.listen(1337);
-
-server.listen(3333);
 
 module.exports = app;
 
