@@ -40,16 +40,67 @@ module.exports = function (io) {
             }
         });
 
+        socket.on('KEY_RIGHT', function(user){
+            io.to(room).emit("KEY_RIGHT", user);
+        });
+
+        socket.on('KEY_LEFT', function(user){
+            io.to(room).emit("KEY_LEFT", user);
+        });
+
+        socket.on('KEY_RIGHT_STOP', function(user){
+            io.to(room).emit("KEY_RIGHT_STOP", user);
+        });
+
+        socket.on('KEY_LEFT_STOP', function(user){
+            io.to(room).emit("KEY_LEFT_STOP", user);
+        });
+
+        socket.on('KEY_UP', function(user){
+            io.to(room).emit("KEY_UP", user);
+        });
+
+        socket.on('KEY_A', function(user){
+            io.to(room).emit("PUNCH", user);
+        });
+
+        socket.on('KEY_R', function(user){
+            io.to(room).emit("KICK", user);
+        });
+
+        socket.on('HIT', function(user, dommage){
+            io.to(room).emit('HIT', user, dommage);
+        });
+
+        socket.on('SYNC_POSITION', function($dx, $user){
+            io.to(room).emit('SYNC_POSITION', $dx, $user);
+        });
+
+        socket.on('KEY_E', function($user){
+            io.to(room).emit('BLOCK', $user);
+        });
+
+        socket.on('KEY_E_STOP', function($user){
+            io.to(room).emit('BLOCK_STOP', $user);
+        });
+
+        socket.on('KEY_SPACE', function($user){
+            io.to(room).emit('THROW_EM', $user);
+        });
+
+        socket.on('THROWN', function($user, $damage){
+            io.to(room).emit('THROWN', $user, $damage);
+        });
+
         function ConnectUser(newUser) {
             user = newUser;
             socket.join(room);
             parties[room].push(user);
             socket.emit("USER_ACCEPTED");
-            socket.to(room).emit('CONNECT_USER', user);
-            if(parties[room].length === 2) {
-                console.log('START THE GAME');
-                io.to(room).emit('START_GAME');
+            //socket.to(room).emit('CONNECT_USER', user);
 
+            if(parties[room].length === 2) {
+                io.to(room).emit('START_GAME', parties[room]);
             }
         };
 

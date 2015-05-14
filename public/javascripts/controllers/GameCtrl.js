@@ -7,9 +7,9 @@
 
     function GameCtrl($rootScope, $scope, $routeParams, $location, User) {
 
-        $scope.socket = io.connect("http://localhost:3333", {"force new connection": true});
+        $scope.socket = io.connect("//"+ window.location.hostname + ":3333", {"force new connection": true});
         $scope.room = $routeParams;
-        $scope.users = [];
+        $scope.rival = null;
         $rootScope.disabledLogout = true;
 
         $scope.user = new User($rootScope.user.username, $rootScope.user.nbParts,  $rootScope.user.nbWins,  $rootScope.user.nbLoss, $rootScope.user.id);
@@ -19,46 +19,67 @@
         });
 
         $scope.socket.on("USER_ACCEPTED", function(){
-            //alert('User accepted');
-        });
-
-        $scope.socket.on("CONNECT_USER", function(user){
-            //alert('User connect');
+            win = new Window(800, 600);
         });
 
         $scope.socket.on("DISCONNECTED_USER", function(user){
-            //alert('Player 2 disconnected');
             $scope.socket.disconnect();
         });
 
         $scope.socket.on("disconnect", function(){
-            //alert('Allleert !!! Disconnected !!!');
             $scope.socket.disconnect();
             $location.path("/chat");
             $scope.$apply();
         });
 
-        //$scope.$watch($rootScope.logout, function(){
-        //    alert('test');
-        //});
+        window.onhashchange = function() {
+            if (!window.innerDocClick) {
+                $scope.socket.disconnect();
+            }
+        };
 
-        $scope.socket.on("START_GAME", function(){
-            //alert('start game');
+        function syncPositions() {
+            $scope.socket.emit("SYNC_POSITION", controlPlayer.x, $scope.user);
+        }
+
+        $scope.socket.on("SYNC_POSITION", function($x, $user){
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.x = $x;
+            }
+        });
+
+
+        $scope.socket.on("START_GAME", function(users){
             (function() {
                 win = new Window(800, 600);
-                resetGameState();
+                resetGameState(users);
 
                 document.addEventListener("keydown", function(event) {
                     // What a horrible hack, only allow the players to when the key is pressed
                     // down and ignore hold down jump keys.
-                    if (event.which == KEY_W && !keys.isPressed(KEY_W)) {
-                        player1.jump();
-                    }
                     if (event.which == KEY_UP && !keys.isPressed(KEY_UP)) {
-                        player2.jump();
+                        $scope.socket.emit("KEY_UP", $scope.user);
+                    }
+
+                    if (event.which == KEY_LEFT) {
+                        $scope.socket.emit("KEY_LEFT", $scope.user);
+                    }
+
+                    if (event.which ==  KEY_RIGHT) {
+                        $scope.socket.emit("KEY_RIGHT", $scope.user);
+                    }
+
+                    if (event.which ==  KEY_E) {
+                        $scope.socket.emit("KEY_E", $scope.user);
+                    }
+
+                    if (event.which ==  KEY_SPACE) {
+                        $scope.socket.emit("KEY_SPACE", $scope.user);
                     }
 
                     keys.down(event.which);
+
                     if (event.which == KEY_P) {
                         DEBUG=!DEBUG;
                         debug.text = '';
@@ -66,19 +87,32 @@
                     if (event.which == KEY_O) {
                         win.should_scroll = !win.should_scroll;
                     }
-                    //if (event.which == KEY_X) {  // Suicide, for testing "game over"
-                    //  player1.health = -1;
-                    //}
                     if (event.which == KEY_ESC) { // Stop the game (helpful when developing)
                         clearInterval(interval);
                     }
                 });
 
                 document.addEventListener("keyup", function(event) {
+
+                    if (event.which ==  KEY_LEFT) {
+                        $scope.socket.emit("KEY_LEFT_STOP", $scope.user);
+                    }
+
+                    if (event.which == KEY_RIGHT) {
+                        $scope.socket.emit("KEY_RIGHT_STOP", $scope.user);
+                    }
+
+                    if (event.which == KEY_E) {
+                        $scope.socket.emit("KEY_E_STOP", $scope.user);
+                    }
+
                     keys.up(event.which);
                 });
 
                 interval = setInterval(update, 30);
+
+                intervalPositions = setInterval(syncPositions, 30);
+
             })();
         });
 
@@ -95,9 +129,6 @@
             this.width = width;
             this.height = height;
 
-            this.scroll_speed = .1;
-            this.scroll_location = 0;
-
             canvas.setAttribute('width', width);
             canvas.setAttribute('height', height);
             this.context = this.getContext();
@@ -106,8 +137,6 @@
             this.context.transform(1, 0, 0, -1, 1, 1);
             this.context.translate(0, -height + ORIGIN_VERTICAL_OFFSET);
 
-            this.sky_ = new Image();
-            this.sky_.setAttribute('src', 'images/sky.png');
         }
 
         Window.prototype.gameOver = function() {
@@ -116,7 +145,6 @@
 
 
         Window.prototype.reset = function() {
-            this.scroll_location = 0;
             game_over.style.display = 'none';
             fight.style.display = 'block';
         };
@@ -134,23 +162,31 @@
         };
 
         Window.prototype.right = function() {
-            return this.scroll_location + this.width;
+            return this.width;
         };
 
         Window.prototype.update = function(dt) {
 
             // Don't let the players past the left edge of the screen
-            var min_player_x = this.scroll_location + SPRITE_HALF_WIDTH;
+            var min_player_x = SPRITE_HALF_WIDTH;
             if (player1.x < min_player_x) {
                 player1.x = min_player_x;
             }
             if (player2.x < min_player_x) {
                 player2.x = min_player_x;
             }
+            // Don't le the players past the right edge of the screen
+            var max_player_x = this.width - SPRITE_HALF_WIDTH;
+            if (player1.x > max_player_x) {
+                player1.x = max_player_x;
+            }
+            if (player2.x > max_player_x) {
+                player2.x = max_player_x;
+            }
         };
 
         Window.prototype.drawPlayer = function(player) {
-            var x = player.x - this.scroll_location;
+            var x = player.x;
             var y = player.y;
             player.sprite.drawAt(this.context, x, player.y, !player.facing_right);
 
@@ -175,13 +211,12 @@
 
         Window.prototype.draw = function() {
             // Sky
-            for (var i=0; i <= this.width; i += 200) {
-                this.context.drawImage(this.sky_, 0, 0, 200, 600,
-                    i - (this.scroll_location % 200), -ORIGIN_VERTICAL_OFFSET, 200, 600);
-            }
+            this.context.fillStyle = '#aaf';
+            this.context.fillRect(0, 0, this.width, this.height);
 
             // Ground
-            level.drawLevel(this.context, parseInt(this.scroll_location), this.width);
+            this.context.fillStyle = '#353';
+            this.context.fillRect(0, 25, this.width, -this.height);
 
             // Sprites
             this.drawPlayer(player1);
@@ -200,69 +235,9 @@
         };
 
 
-        function buildLevel_() {
-            var level = [];
-            var previous_height = 0;
-            var previous_was_hole = false;
-            for (var i = 0; i < 5000; i++) {
-                // Pick new height based on previous height
-                var new_height = previous_height + parseInt((Math.random() - .5) * 3) * 25;
-
-                // Limit heights
-                new_height = Math.max(new_height, 0);
-                new_height = Math.min(new_height, 400);
-
-                previous_height = new_height;
-
-                // Randomly put some holes in
-                // (Don't put 2 holes in a row. No holes at start of level)
-                if (i > 8 && !previous_was_hole && Math.random() > .8) {
-                    new_height = -900;
-                    previous_was_hole = true;
-                } else {
-                    previous_was_hole = false;
-                }
-
-                level.push(new_height);
-            }
-            return level;
-        }
-
-        function Level() {
-            // Heights are in pixels
-            this.level = buildLevel_();
-            this.BLOCK_SIZE=100;
-
-
-            this.image1_ = new Image();
-            this.image1_.setAttribute('src', 'images/ground1.png');
-            this.image2_ = new Image();
-            this.image2_.setAttribute('src', 'images/ground2.png');
-
-            this.drawLevel = function(context, left_x, width) {
-                for (var x = left_x; x <= left_x + width; x += this.BLOCK_SIZE) {
-                    var index = this.pixelToHeightIndex_(x);
-                    var height = this.getHeightAtPoint(x);
-                    var image;
-                    if (index % 2) { image = this.image1_ } else { image = this.image2_};
-                    context.drawImage(image, 0, 0, 100, 600,
-                        index * this.BLOCK_SIZE - left_x, height - 600, 100, 600);
-                }
-            };
-
-            this.getHeightAtPoint = function(x) {
-                var index = this.pixelToHeightIndex_(x);
-                return this.level[index];
-            };
-
-            this.pixelToHeightIndex_ = function(x) {
-                return parseInt(x / this.BLOCK_SIZE);
-            }
-        }
         /**
          * A rock-hard animating sprite class.
          */
-
         function AnimatingSprite(resource) {
             var that = this;
 
@@ -285,6 +260,8 @@
             'pain': [1],
             'punch_l': [2, 0],
             'punch_r': [3, 0],
+            'kick_r': [14, 14, 0],
+            'kick_l': [14, 14, 0],
             'block': [4],
             'throw': [5],
             'thrown': [7, 8, 9, 10, 10, 0, 0, 0]
@@ -330,13 +307,21 @@
             var y = parseInt(spriteIndex / 4) * 96;
             return {x: x, y: y};
         };
-        function Player(x, sprite_sheet, facing_right) {
+
+        function Player(x, sprite_sheet, facing_right, controle, user) {
             this.x = x;
             this.dx = 0;
-            this.y = level.getHeightAtPoint(x);
+            this.y = 0;
             this.dy = 0;
             this.health = 100;
             this.sprite = new AnimatingSprite(sprite_sheet);
+
+            this.controle = controle;
+            this.user = user;
+
+            this.left = false;
+            this.right = false;
+            this.jump = false;
 
             this.facing_right = facing_right;
 
@@ -347,11 +332,14 @@
             this.DX_ACCEL = .05;
             this.DX_DECAY = .02;
             this.PUNCH_TIME = 250;
+            this.KICK_TIME = 400;
             this.BLOCK_TIME = 250;
             this.PAIN_TIME = 200;
             this.THROW_TIME = 600;
             this.PUNCH_RANGE = 70;
             this.PUNCH_DAMAGE = 5;
+            this.KICK_RANGE = 100;
+            this.KICK_DAMAGE = 6;
             this.THROW_DAMAGE = 7;
             this.THROW_RANGE = 70;
             this.HIT_MOVE_DISTANCE = 5;
@@ -363,7 +351,7 @@
                     return;
                 }
                 // Prevent movement up the landscape
-                var nextHeight = level.getHeightAtPoint(this.x - (SPRITE_HALF_WIDTH - 18));
+                var nextHeight = 0;
                 if (nextHeight > this.y) {
                     this.dx = 0;
                     return;
@@ -378,7 +366,7 @@
                     return;
                 }
                 // Prevent movement up the landscape.
-                var nextHeight = level.getHeightAtPoint(this.x + (SPRITE_HALF_WIDTH - 18));
+                var nextHeight = 0;
                 if (nextHeight > this.y) {
                     this.dx = 0;
                     return;
@@ -404,6 +392,8 @@
                     var spriteState = 'block';
                 } else if (newAction == ACTION_PAIN) {
                     var spriteState = 'pain';
+                }else if (newAction == ACTION_KICK) {
+                    var spriteState = (this.facing_right) ? 'kick_l' : 'kick_r';
                 } else if (newAction == ACTION_THROW) {
                     var spriteState = 'throw';
                 } else if (newAction == ACTION_THROWN) {
@@ -421,9 +411,24 @@
                 this.setAction(ACTION_PUNCH);
                 this.action_timer = this.PUNCH_TIME;
                 this.dx = 0;
+                this.block(false);
 
                 if (this.distanceTo(this.other_player) < this.PUNCH_RANGE) {
-                    this.other_player.hit(this.PUNCH_DAMAGE);
+                    $scope.socket.emit('HIT', this.other_player.user, this.PUNCH_DAMAGE);
+                }
+            };
+
+            this.kick = function() {
+                if(this.action != ACTION_IDLE) {
+                    return;
+                }
+                this.setAction(ACTION_KICK);
+                this.action_timer = this.KICK_TIME;
+                this.dx = 0;
+                this.block(false);
+
+                if (this.distanceTo(this.other_player) < this.KICK_RANGE) {
+                    $scope.socket.emit('HIT', this.other_player.user, this.KICK_DAMAGE);
                 }
             };
 
@@ -436,7 +441,7 @@
                 this.dx = 0;
 
                 if (this.distanceTo(this.other_player) < this.THROW_RANGE) {
-                    this.other_player.thrown(this.THROW_DAMAGE);
+                    $scope.socket.emit('THROWN', this.other_player.user, this.PUNCH_DAMAGE);
                 }
             };
 
@@ -488,8 +493,10 @@
                     this.dx += this.DX_DECAY;
                 }
 
+                console.log(this.user.username +'1 dx : ', this.x);
+
                 // If the desired position intersects with the landscape then stop the jump.
-                var newHeight = level.getHeightAtPoint(this.x);
+                var newHeight = 0;
                 if (newY < newHeight) {
                     newY = newHeight;
                     this.jumped = false;
@@ -507,6 +514,16 @@
                 }
 
                 this.facing_right = (this.x < this.other_player.x);
+
+                if(this.left) {
+                    this.moveLeft();
+                }
+
+                if(this.right) {
+                    this.moveRight();
+                }
+
+                console.log(this.user.username +'2 dx : ', this.x);
             };
 
             this.isAlive = function() {
@@ -530,15 +547,12 @@
 
         // Key codes
         var KEY_SPACE=32;
-        var KEY_W=87;
         var KEY_A=65;
-        var KEY_S=83;
-        var KEY_D=68;
-        var KEY_X=88;
+        var KEY_Z=90;
+        var KEY_E=69;
         var KEY_R=82;
         var KEY_ESC=27;
         var KEY_O=79;
-        var KEY_T=84;
         var KEY_P=80;
         var KEY_COMMA=188;
         var KEY_PERIOD=190;
@@ -550,6 +564,7 @@
         var ACTION_IDLE = 'idle';
         var ACTION_PAIN = 'pain';
         var ACTION_PUNCH = 'punch';
+        var ACTION_KICK = 'kick';
         var ACTION_BLOCK = 'block';
         var ACTION_THROW = 'throw';
         var ACTION_THROWN = 'thrown';
@@ -561,19 +576,31 @@
         var keys;
         var player1;
         var player2;
+        var controlPlayer;
+        var opponentPlayer;
         var interval;
-        var level;
+        var intervalPositions;
         var lastTimeStamp = 0;
 
         var JUMP_TIME_MS = 800;  // jump time in milliseconds
         var JUMP_HEIGHT = 100;  // in pixels
 
-        function resetGameState() {
-            level = new Level();
+        function resetGameState(users) {
             win.reset();
             var player_offset = win.width/2 - INITIAL_PLAYER_SEPARATION;
-            player1 = new Player(player_offset, 'images/character.png', true);
-            player2 = new Player(win.right() - player_offset, 'images/character_2.png', false);
+
+            users.forEach(function($user, index, array){
+                if($user.id === $scope.user.id) {
+                    if(index === 0){
+                        controlPlayer = player1 = new Player(player_offset, 'images/character.png', true, true, $user);
+                        opponentPlayer = player2 = new Player(win.right() - player_offset, 'images/character_2.png', false, false, users[1]);
+                    }else {
+                        opponentPlayer = player1 = new Player(player_offset, 'images/character.png', true, false, users[0]);
+                        controlPlayer = player2 = new Player(win.right() - player_offset, 'images/character_2.png', false, true, $user);
+                    }
+                }
+            });
+
             player1.other_player = player2;
             player2.other_player = player1;
             keys = new KeyWatcher();
@@ -588,36 +615,107 @@
         }
 
         function handleInput() {
-            if (keys.isPressed(KEY_R)) {
-                player1.punch();
-            }
-            if (keys.isPressed(KEY_T)) {
-                player1.throw_em();
-            }
-            player1.block(false);
             if (keys.isPressed(KEY_A)) {
-                player1.moveLeft();
-                player1.block(player1.facing_right);
+                $scope.socket.emit("KEY_A", $scope.user);
             }
-            if (keys.isPressed(KEY_D)) {
-                player1.moveRight();
-                player1.block(!player1.facing_right);
+            if (keys.isPressed(KEY_R)) {
+                $scope.socket.emit("KEY_R", $scope.user);
             }
+        }
 
-            if (keys.isPressed(KEY_COMMA)) {
-                player2.punch();
+        $scope.socket.on("KEY_RIGHT", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.right = true;
             }
-            if (keys.isPressed(KEY_PERIOD)) {
-                player2.throw_em();
+        });
+
+        $scope.socket.on("KEY_LEFT", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.left = true;
             }
-            player2.block(false);
-            if (keys.isPressed(KEY_LEFT)) {
-                player2.moveLeft();
-                player2.block(player2.facing_right);
+        });
+
+        $scope.socket.on("KEY_RIGHT_STOP", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.right = false;
             }
-            if (keys.isPressed(KEY_RIGHT)) {
-                player2.moveRight();
-                player2.block(!player2.facing_right);
+        });
+
+        $scope.socket.on("KEY_LEFT_STOP", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.left = false;
+            }
+        });
+
+        $scope.socket.on("KEY_UP", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.jump();
+            }
+        });
+
+        $scope.socket.on("PUNCH", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.punch();
+            }
+        });
+
+        $scope.socket.on("HIT", function($user, $damage) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.hit($damage);
+            }
+        });
+
+        $scope.socket.on("BLOCK", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.block(true);
+            }
+        });
+
+        $scope.socket.on("BLOCK_STOP", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.block(false);
+            }
+        });
+
+        $scope.socket.on("THROW_EM", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.throw_em();
+            }
+        });
+
+        $scope.socket.on("THROWN", function($user, $damage) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.thrown($damage);
+            }
+        });
+
+        $scope.socket.on("KICK", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.kick();
+            }
+        });
+
+        function getPlayerByUser($user) {
+            if($user !== undefined) {
+                if(player1.user.id === $user.id) {
+                    return player1;
+                }
+
+                if(player2.user.id === $user.id) {
+                    return player2;
+                }
             }
         }
 
@@ -635,19 +733,16 @@
                 player1.update(dt);
                 player2.update(dt);
 
-                if (player1.y < -100) {
-                    player1.health -= dt * PIT_DAMAGE;
-                }
-
-                if (player2.y < -100) {
-                    player2.health -= dt * PIT_DAMAGE;
-                }
-
-                if (!player1.isAlive() || !player2.isAlive()) {
-                    //alert("Game Over. Reset...");
+                if (!player1.isAlive() && player2.isAlive()) {
                     game_state = STATE_GAME_OVER;
-                    win.gameOver();
-                    setTimeout(resetGameState, 2000);
+                    alert('Player '+ player1.user.username +' lose...');
+                    alert('Player '+ player2.user.username +' win !!');
+                }
+
+                if (player1.isAlive() && !player2.isAlive()) {
+                    game_state = STATE_GAME_OVER;
+                    alert('Player '+ player2.user.username +' lose...');
+                    alert('Player '+ player1.user.username +' win !!');
                 }
             }
 

@@ -27,11 +27,17 @@ module.exports = function (io) {
 
             if (newUser && newUser !== "") {
 
-                if(usersOnline.indexOf(newUser) === -1) {
+                var valideUser = true;
+
+                usersOnline.some(function($user, index, array){
+                    if($user.id === newUser.id) {
+                        valideUser = false;
+                    }
+                });
+
+                if(valideUser) {
                     user = newUser;
                     usersOnline.push(newUser);
-                }else {
-                    return false;
                 }
 
                 models.Message.find({}, function (err, messages) {

@@ -7,7 +7,7 @@
 
     function ChatCtrl($rootScope, $scope, $location, User, Message, $mdToast, $animate, $mdDialog) {
 
-        $scope.socket = io.connect('http://localhost:1337', {"force new connection": true});
+        $scope.socket = io.connect('//'+ window.location.hostname + ':1337', {"force new connection": true});
 
         $scope.container = document.getElementById("chatMessages");
         $scope.containerNotif = document.getElementById("notification");
