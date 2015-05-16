@@ -90,10 +90,6 @@
                 });
         };
 
-        User.prototype.win = function load(next) {
-
-        }
-
         return User;
     }
 
