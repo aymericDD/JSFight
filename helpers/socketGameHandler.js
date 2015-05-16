@@ -48,12 +48,20 @@ module.exports = function (io) {
             io.to(room).emit("KEY_LEFT", user);
         });
 
+        socket.on('KEY_DOWN', function(user){
+            io.to(room).emit("KEY_DOWN", user);
+        });
+
         socket.on('KEY_RIGHT_STOP', function(user){
             io.to(room).emit("KEY_RIGHT_STOP", user);
         });
 
         socket.on('KEY_LEFT_STOP', function(user){
             io.to(room).emit("KEY_LEFT_STOP", user);
+        });
+
+        socket.on('KEY_DOWN_STOP', function(user){
+            io.to(room).emit("KEY_DOWN_STOP", user);
         });
 
         socket.on('KEY_UP', function(user){
@@ -68,8 +76,12 @@ module.exports = function (io) {
             io.to(room).emit("KICK", user);
         });
 
-        socket.on('HIT', function(user, dommage){
-            io.to(room).emit('HIT', user, dommage);
+        socket.on('HIT_KICK', function(user, dommage){
+            io.to(room).emit('HIT_KICK', user, dommage);
+        });
+
+        socket.on('HIT_PUNCH', function(user, dommage){
+            io.to(room).emit('HIT_PUNCH', user, dommage);
         });
 
         socket.on('SYNC_POSITION', function($dx, $user){

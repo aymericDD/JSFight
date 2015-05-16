@@ -13,6 +13,7 @@ require("./authentication/passport-configuration");
 
 var defaultRoutes = require('./routes/defaultRoutes');
 var authApiV1 = require('./routes/authApiV1');
+var userApiV1 = require('./routes/userApiV1');
 
 /** MongoDB **/
 mongoose.connect('mongodb://localhost/JSFight');
@@ -63,6 +64,7 @@ app.use(passport.session());
 
 app.use('/', defaultRoutes);
 app.use('/api/v1/auth', authApiV1);
+app.use('/api/v1/user', userApiV1);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

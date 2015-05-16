@@ -1,9 +1,26 @@
-/* line 2, ../sass/_lobby.scss */
+/* line 1, ../sass/_lobby.scss */
 #chatMessages {
   height: 200px;
   overflow-y: scroll;
   overflow-x: hidden;
   text-align: left;
+}
+
+/* line 1, ../sass/_game.scss */
+#game {
+  margin: auto;
+  display: block;
+  position: relative;
+  width: 800px;
+  height: 600px;
+}
+
+/* line 9, ../sass/_game.scss */
+#fight, #game_over {
+  display: none;
+  position: absolute;
+  top: 250px;
+  left: 150px;
 }
 
 /* Common, default styles for the notification box */

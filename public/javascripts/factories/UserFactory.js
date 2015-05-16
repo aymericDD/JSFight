@@ -48,6 +48,18 @@
                 });
         };
 
+        User.prototype.update = function update(next) {
+            var self = this;
+
+            $http.put("api/v1/user/" + self.id, self)
+                .success(function (data) {
+                    return next(null, data);
+                })
+                .error(function (data) {
+                    return next(data, null);
+                });
+        };
+
         /**
          * Return data user
          *
@@ -77,6 +89,10 @@
                     return next(data, null);
                 });
         };
+
+        User.prototype.win = function load(next) {
+
+        }
 
         return User;
     }

@@ -5,7 +5,7 @@
 (function () {
     var _JSFight = angular.module("JSFight");
 
-    function GameCtrl($rootScope, $scope, $routeParams, $location, User) {
+    function GameCtrl($rootScope, $scope, $routeParams, $location, User, $mdDialog) {
 
         $scope.socket = io.connect("//"+ window.location.hostname + ":3333", {"force new connection": true});
         $scope.room = $routeParams;
@@ -51,6 +51,9 @@
 
 
         $scope.socket.on("START_GAME", function(users){
+            $scope.user.nbParts = $scope.user.nbParts + 1;
+            $scope.user.update();
+
             (function() {
                 win = new Window(800, 600);
                 resetGameState(users);
@@ -70,12 +73,18 @@
                         $scope.socket.emit("KEY_RIGHT", $scope.user);
                     }
 
+                    if (event.which ==  KEY_DOWN) {
+                        $scope.socket.emit("KEY_DOWN", $scope.user);
+                    }
+
                     if (event.which ==  KEY_E) {
                         $scope.socket.emit("KEY_E", $scope.user);
                     }
 
                     if (event.which ==  KEY_SPACE) {
-                        $scope.socket.emit("KEY_SPACE", $scope.user);
+                        if(!controlPlayer.THROW_COOLDOWN) {
+                            $scope.socket.emit("KEY_SPACE", $scope.user);
+                        }
                     }
 
                     keys.down(event.which);
@@ -102,6 +111,10 @@
                         $scope.socket.emit("KEY_RIGHT_STOP", $scope.user);
                     }
 
+                    if (event.which == KEY_DOWN) {
+                        $scope.socket.emit("KEY_DOWN_STOP", $scope.user);
+                    }
+
                     if (event.which == KEY_E) {
                         $scope.socket.emit("KEY_E_STOP", $scope.user);
                     }
@@ -109,9 +122,9 @@
                     keys.up(event.which);
                 });
 
-                interval = setInterval(update, 30);
+                interval = setInterval(update, 20);
 
-                intervalPositions = setInterval(syncPositions, 30);
+                intervalPositions = setInterval(syncPositions, 20);
 
             })();
         });
@@ -259,9 +272,11 @@
             'idle': [0],
             'pain': [1],
             'punch_l': [2, 0],
-            'punch_r': [3, 0],
+            'punch_r': [2, 0],
             'kick_r': [14, 14, 0],
             'kick_l': [14, 14, 0],
+            'crouch': [13],
+            'block_crouch': [12],
             'block': [4],
             'throw': [5],
             'thrown': [7, 8, 9, 10, 10, 0, 0, 0]
@@ -321,7 +336,7 @@
 
             this.left = false;
             this.right = false;
-            this.jump = false;
+            this.down = false;
 
             this.facing_right = facing_right;
 
@@ -336,18 +351,21 @@
             this.BLOCK_TIME = 250;
             this.PAIN_TIME = 200;
             this.THROW_TIME = 600;
-            this.PUNCH_RANGE = 70;
+            this.PUNCH_RANGE = 55;
             this.PUNCH_DAMAGE = 5;
-            this.KICK_RANGE = 100;
+            this.KICK_RANGE = 70;
             this.KICK_DAMAGE = 6;
             this.THROW_DAMAGE = 7;
-            this.THROW_RANGE = 70;
+            this.THROW_COOLDOWN_TIME_STATIC = 8000;
+            this.THROW_COOLDOWN_TIME = this.THROW_COOLDOWN_TIME_STATIC;
+            this.THROW_COOLDOWN = false;
+            this.THROW_RANGE = 55;
             this.HIT_MOVE_DISTANCE = 5;
             this.THROWN_SPEED = -.5;
             this.THROWN_TIME = 600;
 
             this.moveLeft = function() {
-                if (this.action != ACTION_IDLE) {
+                if (this.action != ACTION_IDLE || this.isBlocking) {
                     return;
                 }
                 // Prevent movement up the landscape
@@ -361,8 +379,9 @@
                     this.dx = -this.MAX_SPEED;
                 }
             };
+
             this.moveRight = function() {
-                if (this.action != ACTION_IDLE) {
+                if (this.action != ACTION_IDLE || this.isBlocking)  {
                     return;
                 }
                 // Prevent movement up the landscape.
@@ -376,24 +395,30 @@
                     this.dx = this.MAX_SPEED;
                 }
             };
+
             this.jump = function() {
                 // Do not allow a new jump if one is already in progress.
-                if (this.jumped) {
+                if (this.jumped || this.action === ACTION_CROUCH) {
                     return;
                 }
                 this.dy = 0.4;  // set some initial upwards velocity
                 this.jumped = true;
             };
+
             this.setAction = function(newAction) {
                 this.action = newAction;
                 if (newAction == ACTION_PUNCH) {
                     var spriteState = (this.facing_right) ? 'punch_l' : 'punch_r';
                 } else if (newAction == ACTION_BLOCK) {
                     var spriteState = 'block';
+                }else if (newAction == ACTION_BLOCK_CROUCH) {
+                    var spriteState = 'block_crouch';
                 } else if (newAction == ACTION_PAIN) {
                     var spriteState = 'pain';
                 }else if (newAction == ACTION_KICK) {
                     var spriteState = (this.facing_right) ? 'kick_l' : 'kick_r';
+                }else if (newAction == ACTION_CROUCH) {
+                    var spriteState = 'crouch';
                 } else if (newAction == ACTION_THROW) {
                     var spriteState = 'throw';
                 } else if (newAction == ACTION_THROWN) {
@@ -413,8 +438,8 @@
                 this.dx = 0;
                 this.block(false);
 
-                if (this.distanceTo(this.other_player) < this.PUNCH_RANGE) {
-                    $scope.socket.emit('HIT', this.other_player.user, this.PUNCH_DAMAGE);
+                if (this.distanceTo(this.other_player) < this.PUNCH_RANGE && !this.other_player.down) {
+                    $scope.socket.emit('HIT_PUNCH', this.other_player.user, this.PUNCH_DAMAGE);
                 }
             };
 
@@ -428,7 +453,7 @@
                 this.block(false);
 
                 if (this.distanceTo(this.other_player) < this.KICK_RANGE) {
-                    $scope.socket.emit('HIT', this.other_player.user, this.KICK_DAMAGE);
+                    $scope.socket.emit('HIT_KICK', this.other_player.user, this.KICK_DAMAGE);
                 }
             };
 
@@ -439,9 +464,10 @@
                 this.setAction(ACTION_THROW);
                 this.action_timer = this.THROW_TIME;
                 this.dx = 0;
+                this.THROW_COOLDOWN = true;
 
                 if (this.distanceTo(this.other_player) < this.THROW_RANGE) {
-                    $scope.socket.emit('THROWN', this.other_player.user, this.PUNCH_DAMAGE);
+                    $scope.socket.emit('THROWN', this.other_player.user, this.THROW_DAMAGE);
                 }
             };
 
@@ -456,21 +482,44 @@
                 }
             };
 
-            this.hit = function(damage) {
+            this.hit_punch = function(damage) {
                 this.dx = 0;
                 if (this.isBlocking) {
-                    this.setAction(ACTION_BLOCK);
-                    this.action_timer = this.BLOCK_TIME;
+                    this.block_hit();
                     // BUG Player isn't looking the right way now
                 } else {
-                    this.health -= damage;
-                    this.setAction(ACTION_PAIN);
-                    this.action_timer = this.PAIN_TIME;
-                    if (this.facing_right) {  // BUG: not right if player is walking away
-                        this.x -= this.HIT_MOVE_DISTANCE;
-                    } else {
-                        this.x += this.HIT_MOVE_DISTANCE;
-                    }
+                    this.hit(damage);
+                }
+            };
+
+            this.block_hit = function() {
+                if(this.action === ACTION_CROUCH || this.action === ACTION_BLOCK_CROUCH) {
+                    this.setAction(ACTION_BLOCK_CROUCH);
+                }else {
+                    this.setAction(ACTION_BLOCK);
+                }
+
+                this.action_timer = this.BLOCK_TIME;
+            };
+
+            this.hit = function(damage) {
+                this.health -= damage;
+                this.setAction(ACTION_PAIN);
+                this.action_timer = this.PAIN_TIME;
+                if (this.facing_right) {  // BUG: not right if player is walking away
+                    this.x -= this.HIT_MOVE_DISTANCE;
+                } else {
+                    this.x += this.HIT_MOVE_DISTANCE;
+                }
+            }
+
+            this.hit_kick = function(damage) {
+                this.dx = 0;
+                if (this.isBlocking && this.down) {
+                    this.block_hit();
+                    // BUG Player isn't looking the right way now
+                } else {
+                    this.hit(damage);
                 }
             };
 
@@ -493,8 +542,6 @@
                     this.dx += this.DX_DECAY;
                 }
 
-                console.log(this.user.username +'1 dx : ', this.x);
-
                 // If the desired position intersects with the landscape then stop the jump.
                 var newHeight = 0;
                 if (newY < newHeight) {
@@ -509,21 +556,32 @@
 
                     if (this.action_timer <= 0) {
                         this.action_timer = 0;
-                        this.setAction(ACTION_IDLE);
+                        if(this.action === ACTION_BLOCK_CROUCH) {
+                            this.setAction(ACTION_CROUCH);
+                        }else {
+                            this.setAction(ACTION_IDLE);
+                        }
                     }
                 }
 
                 this.facing_right = (this.x < this.other_player.x);
 
-                if(this.left) {
+                if (this.left) {
                     this.moveLeft();
                 }
 
-                if(this.right) {
+                if (this.right) {
                     this.moveRight();
                 }
 
-                console.log(this.user.username +'2 dx : ', this.x);
+                if (this.THROW_COOLDOWN) {
+                    this.THROW_COOLDOWN_TIME = this.THROW_COOLDOWN_TIME - 20;
+                    if(this.THROW_COOLDOWN_TIME === 0) {
+                        this.THROW_COOLDOWN = false;
+                        this.THROW_COOLDOWN_TIME = this.THROW_COOLDOWN_TIME_STATIC;
+                    }
+                }
+
             };
 
             this.isAlive = function() {
@@ -532,6 +590,20 @@
 
             this.block = function(should_block) {
                 this.isBlocking = should_block;
+            };
+
+            this.crouch = function(should_crouch) {
+                if(should_crouch) {
+                    if (this.action != ACTION_IDLE) {
+                        return;
+                    }
+                    this.down = true;
+                    this.setAction(ACTION_CROUCH);
+                }else {
+                    this.down = false;
+                    this.setAction(ACTION_IDLE);
+                }
+
             };
 
             this.action_timer = 0;
@@ -565,6 +637,8 @@
         var ACTION_PAIN = 'pain';
         var ACTION_PUNCH = 'punch';
         var ACTION_KICK = 'kick';
+        var ACTION_CROUCH = 'crouch';
+        var ACTION_BLOCK_CROUCH = 'block_crouch';
         var ACTION_BLOCK = 'block';
         var ACTION_THROW = 'throw';
         var ACTION_THROWN = 'thrown';
@@ -637,6 +711,13 @@
             }
         });
 
+        $scope.socket.on("KEY_DOWN", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.crouch(true);
+            }
+        });
+
         $scope.socket.on("KEY_RIGHT_STOP", function($user) {
             var player = getPlayerByUser($user);
             if(player !== undefined) {
@@ -648,6 +729,13 @@
             var player = getPlayerByUser($user);
             if(player !== undefined) {
                 player.left = false;
+            }
+        });
+
+        $scope.socket.on("KEY_DOWN_STOP", function($user) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.crouch(false);
             }
         });
 
@@ -665,10 +753,17 @@
             }
         });
 
-        $scope.socket.on("HIT", function($user, $damage) {
+        $scope.socket.on("HIT_PUNCH", function($user, $damage) {
             var player = getPlayerByUser($user);
             if(player !== undefined) {
-                player.hit($damage);
+                player.hit_punch($damage);
+            }
+        });
+
+        $scope.socket.on("HIT_KICK", function($user, $damage) {
+            var player = getPlayerByUser($user);
+            if(player !== undefined) {
+                player.hit_kick($damage);
             }
         });
 
@@ -707,6 +802,23 @@
             }
         });
 
+        $scope.showAlert = function($title) {
+            // Appending dialog to document.body to cover sidenav in docs app
+            var confirm = $mdDialog.confirm()
+                .parent(angular.element(document.body))
+                .title($title)
+                .ok('Close');
+            $mdDialog.show(confirm).then(function() {
+                $location.path("/chat");
+                $scope.socket.disconnect();
+                $scope.$apply();
+            }, function() {
+                $location.path("/chat");
+                $scope.socket.disconnect();
+                $scope.$apply();
+            });
+        };
+
         function getPlayerByUser($user) {
             if($user !== undefined) {
                 if(player1.user.id === $user.id) {
@@ -734,15 +846,27 @@
                 player2.update(dt);
 
                 if (!player1.isAlive() && player2.isAlive()) {
+                    if (player1.user.id === $scope.user.id) {
+                        $scope.user.nbLoss = $scope.user.nbLoss + 1;
+                        $scope.showAlert("You lose !");
+                    } else {
+                        $scope.user.nbWins = $scope.user.nbWins + 1;
+                        $scope.showAlert("You win !");
+                    }
+                    $scope.user.update();
                     game_state = STATE_GAME_OVER;
-                    alert('Player '+ player1.user.username +' lose...');
-                    alert('Player '+ player2.user.username +' win !!');
                 }
 
                 if (player1.isAlive() && !player2.isAlive()) {
+                    if (player1.user.id === $scope.user.id) {
+                        $scope.user.nbWins = $scope.user.nbWins + 1;
+                        $scope.showAlert("You win !");
+                    } else {
+                        $scope.user.nbLoss = $scope.user.nbLoss + 1;
+                        $scope.showAlert("You lose !");
+                    }
+                    $scope.user.update();
                     game_state = STATE_GAME_OVER;
-                    alert('Player '+ player2.user.username +' lose...');
-                    alert('Player '+ player1.user.username +' win !!');
                 }
             }
 
@@ -775,7 +899,7 @@
     }
 
     /** Angular.JS Dependency Injection **/
-    GameCtrl.$inject = ["$rootScope", "$scope", "$routeParams", "$location", "User"];
+    GameCtrl.$inject = ["$rootScope", "$scope", "$routeParams", "$location", "User", "$mdDialog"];
 
     /** Angular.JS Controller Registration **/
     _JSFight.controller("GameCtrl", GameCtrl);

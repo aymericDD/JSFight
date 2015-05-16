@@ -36,6 +36,9 @@ router.route('/login')
                 }
                 return res.json({
                     username: user.username,
+                    nbParts: user.nbParts,
+                    nbWins: user.nbWins,
+                    nbLoss: user.nbLoss,
                     id: user.id
                 });
             });
@@ -47,6 +50,9 @@ router.route('/me')
     .get(function (req, res) {
         return res.json({
             username: req.user.username,
+            nbParts: req.user.nbParts,
+            nbWins: req.user.nbWins,
+            nbLoss: req.user.nbLoss,
             id: req.user.id
         });
     });
@@ -90,13 +96,15 @@ router.route('/register')
                         return res.sendStatus(401);
                     }
                     req.login(user, function (err) {
-                        console.log(err);
                         if (err) {
                             return res.sendStatus(500);
                         }
 
                         return res.json({
                             username: user.username,
+                            nbParts: user.nbParts,
+                            nbWins: user.nbWins,
+                            nbLoss: user.nbLoss,
                             id: user.id
                         });
                     });
