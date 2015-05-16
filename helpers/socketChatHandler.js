@@ -11,7 +11,6 @@ module.exports = function (io) {
             user;
 
         users.push(socket);
-        usersPossibleFight.push(socket);
         id = users.indexOf(socket);
 
         /**
@@ -29,7 +28,7 @@ module.exports = function (io) {
 
                 var valideUser = true;
 
-                usersOnline.some(function($user, index, array){
+                usersOnline.some(function($user){
                     if($user.id === newUser.id) {
                         valideUser = false;
                     }
@@ -38,6 +37,7 @@ module.exports = function (io) {
                 if(valideUser) {
                     user = newUser;
                     usersOnline.push(newUser);
+                    usersPossibleFight[newUser.id] = socket;
                 }
 
                 models.Message.find({}, function (err, messages) {
@@ -75,17 +75,15 @@ module.exports = function (io) {
         socket.on('FIGHT_ACCEPTED', function(user1, user2, user1SocketId) {
             if(user1 && user2 && user1SocketId) {
                 // Get socket user1 and remove it to userPossibleFight
-                var socketUser1 = getSocket(user1SocketId, usersPossibleFight);
+                var socketUser1 = usersPossibleFight[user1.id];
 
                 if(typeof socketUser1 !== 'undefined') {
-                    var indexUser1 = usersPossibleFight.indexOf(socketUser1);
-                    usersPossibleFight.splice(indexUser1, 1);
+                    usersPossibleFight.splice(user1.id, 1);
                     // Get socket user2 and remove it to userPossibleFight
-                    var socketUser2 = getSocket(socket.id, usersPossibleFight);
+                    var socketUser2 = usersPossibleFight[user2.id];
 
                     if(typeof socketUser2 !== 'undefined'){
-                        var indexUser2 = usersPossibleFight.indexOf(socketUser2);
-                        usersPossibleFight.splice(indexUser2, 1);
+                        usersPossibleFight.splice(user2.id, 1);
                         // Construct future room
                         var room = user1.id + user2.id;
                         // Emit to users socket
@@ -103,6 +101,13 @@ module.exports = function (io) {
             getRandomUserOnline(sender, function(receiver) {
                 receiver.emit("INVITATION_FIGHT", {user: user, socketId: socket.id});
             });
+        });
+
+        socket.on("SINGLE_FIGHT", function(receiverId){
+            if (receiverId) {
+                var socketReceiver = usersPossibleFight[receiverId];
+                socketReceiver.emit("INVITATION_FIGHT", {user: user, socketId: socket.id});
+            }
         });
 
         /**
@@ -136,9 +141,10 @@ module.exports = function (io) {
          * @returns {*}
          */
         function getRandomUserOnline(sender, callback) {
-            if(usersPossibleFight.length > 1) {
-                var receiver = usersPossibleFight[Math.floor(Math.random()*usersPossibleFight.length)];
-                if(usersPossibleFight[id].id === receiver.id) {
+            if(usersOnline.length > 1) {
+                var randomUser = usersOnline[Math.floor(Math.random()*usersOnline.length)];
+                var receiver = usersPossibleFight[randomUser.id];
+                if(sender.id === randomUser.id) {
                     return getRandomUserOnline(sender, callback);
                 }else {
                     return callback(receiver);
@@ -154,16 +160,6 @@ module.exports = function (io) {
                 return true;
             }
             return false;
-        };
-
-        function getSocket($value, $array) {
-            var result = false;
-            $array.forEach(function($item, index, array){
-                if($item.id === $value){
-                    result = $item;
-                }
-            });
-            return result;
         };
 
     });

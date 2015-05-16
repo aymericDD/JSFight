@@ -167,6 +167,12 @@
             $scope.socket.emit("QUICK_FIGHT", $scope.user);
         };
 
+        $scope.singleFight = function singleFight(userId) {
+            if (userId && userId !== $scope.user.id) {
+                $scope.socket.emit("SINGLE_FIGHT", userId);
+            }
+        };
+
         $rootScope.DisconnectUser = function DisconnectUser() {
             $scope.socket.disconnect();
             $rootScope.logout();
