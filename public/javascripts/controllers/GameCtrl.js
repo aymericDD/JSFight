@@ -70,7 +70,11 @@
 
         $scope.socket.on("START_GAME", function(users){
             $scope.user.nbParts = $scope.user.nbParts + 1;
-            $scope.user.update();
+            $scope.user.update(function(err, success){
+                if (err) {
+                    console.log(err);
+                }
+            });
 
             (function() {
                 win = new Window(800, 600, users, $scope.user);
@@ -336,7 +340,11 @@
                         $scope.user.nbWins = $scope.user.nbWins + 1;
                         $scope.showAlert("You win !");
                     }
-                    $scope.user.update();
+                    $scope.user.update(function(err, success) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
                     game_state = STATE_GAME_OVER;
                 }
 

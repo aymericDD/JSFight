@@ -54,6 +54,8 @@
          * @param next
          */
         User.prototype.update = function update(next) {
+            var self = this;
+
             $http.put("api/v1/user/" + self.id, self)
                 .success(function (data) {
                     return next(null, data);
