@@ -18,5 +18,7 @@ window._ApplicationTranslations.fr = {
     CHAT_SEND: "Envoyer",
     CHAT_TITLE: "Chat",
     CHAT_USERS_ONLINE: "Utilisateurs connectés",
-    BTN_FIGHT: "Combat rapide"
+    BTN_FIGHT: "Combat rapide",
+    SIDENAV_TITLE: "Filtre des utilisateurs",
+    SIDENAV_BUTTON: "Fermer"
 };

@@ -18,5 +18,7 @@ window._ApplicationTranslations.en = {
     CHAT_SEND: "Send",
     CHAT_TITLE: "Chat",
     CHAT_USERS_ONLINE: "Users online",
-    BTN_FIGHT: "Quick fight"
+    BTN_FIGHT: "Quick fight",
+    SIDENAV_TITLE: "Users filters",
+    SIDENAV_BUTTON: "Close"
 };

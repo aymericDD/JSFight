@@ -31,12 +31,20 @@ div(layout="row" flex layout-margin)
                     md-divider(ng-if="!$last")
     md-sidenav(class="md-sidenav-right md-whiteframe-z2" md-component-id="right")
         md-toolbar(class="md-theme-light")
-            h1(class="md-toolbar-tools") Sidenav Right
+            h1(class="md-toolbar-tools") {{ "SIDENAV_TITLE" | translate }}
         md-content(layout-padding)
+            md-input-container
+                label(for="UserFilter") Nom utilisateur
+                input(md-maxlength="30" type="text" id="UserFilter" ng-model="query")
+            md-select(placeholder="Pick" ng-model="order" layout-align="top top")
+                md-option(value="username") Nom
+                md-option(value="nbParts") Nombres parties
+                md-option(value="nbWins") Nombres victoires
+                md-option(value="nbLoss") Nombres defaites
             md-list
-                md-list-item(ng-repeat="User in AllUsers")
-                    p(ng-if="User.id !== user.id") {{ User.username }}
-                    strong(ng-if="User.id === user.id") {{ User.username }}
+                md-list-item(ng-repeat="User in AllUsers | filter:{username: query} | orderBy: order: true" ng-click="showAlert(User)")
+                    strong(class="md-raised md-warn" ng-if="User.id === user.id") {{ User.username }}
+                    span(class="md-raised" ng-if="User.id !== user.id") {{ User.username }}
                     md-divider(ng-if="!$last")
-            md-button(ng-click="close()" class="md-primary") Close
+            md-button(ng-click="close()" class="md-primary") {{ "SIDENAV_BUTTON" | translate }}
 md-button(ng-click="toggleRight()" class="md-primary md-fab md-fab-bottom-right") Stats

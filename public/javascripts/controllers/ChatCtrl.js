@@ -21,6 +21,8 @@
 
         $scope.loading = true;
 
+        $scope.query= "";
+
         $scope.toastPosition = {
             bottom: true,
             top: false,
@@ -218,6 +220,19 @@
             }, function() {
                 return false;
             });
+        };
+
+        $scope.showAlert = function(user) {
+            // Appending dialog to document.body to cover sidenav in docs app
+            // Modal dialogs should fully cover application
+            // to prevent interaction outside of dialog
+            $mdDialog.show(
+                $mdDialog.alert()
+                    .parent(angular.element(document.body))
+                    .title(user.username)
+                    .content('Victory: '+ user.nbWins + ', Defeats:' + user.nbLoss + ', Amount of time played: ' +user.nbParts)
+                    .ok('Okay!')
+            );
         };
 
         /**
