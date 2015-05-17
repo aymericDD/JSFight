@@ -29,3 +29,14 @@ div(layout="row" flex layout-margin)
                     p(ng-if="userOnline.id !== user.id") {{ userOnline.username }}
                     strong(ng-if="userOnline.id === user.id") {{ userOnline.username }}
                     md-divider(ng-if="!$last")
+    md-sidenav(class="md-sidenav-right md-whiteframe-z2" md-component-id="right")
+        md-toolbar(class="md-theme-light")
+            h1(class="md-toolbar-tools") Sidenav Right
+        md-content(layout-padding)
+            md-list
+                md-list-item(ng-repeat="User in AllUsers")
+                    p(ng-if="User.id !== user.id") {{ User.username }}
+                    strong(ng-if="User.id === user.id") {{ User.username }}
+                    md-divider(ng-if="!$last")
+            md-button(ng-click="close()" class="md-primary") Close
+md-button(ng-click="toggleRight()" class="md-primary md-fab md-fab-bottom-right") Stats

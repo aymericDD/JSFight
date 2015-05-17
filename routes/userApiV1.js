@@ -12,6 +12,22 @@ function ensureAuthenticated(req, res, next) {
     return res.sendStatus(401);
 }
 
+router.route('/all')
+    .all(ensureAuthenticated)
+    .get(function(req, res) {
+        models.User.find({}, function (err, users) {
+            if (err) {
+                throw err;
+            }
+
+            if (!users) {
+               return res.sendStatus(404);
+            }
+
+            return res.json(users);
+        });
+    });
+
 router.route('/:id')
     .all(ensureAuthenticated)
     .all(function (req, res, next) {

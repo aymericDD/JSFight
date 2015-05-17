@@ -48,9 +48,12 @@
                 });
         };
 
+        /**
+         * Update user
+         *
+         * @param next
+         */
         User.prototype.update = function update(next) {
-            var self = this;
-
             $http.put("api/v1/user/" + self.id, self)
                 .success(function (data) {
                     return next(null, data);
@@ -59,6 +62,22 @@
                     return next(data, null);
                 });
         };
+
+        /**
+         * Get all users
+         *
+         * @param next
+         */
+        User.all = function all(next) {
+            $http.get("api/v1/user/all")
+                .success(function(data) {
+                    return next(null, data);
+                })
+                .error(function (data) {
+                    return next(data, null);
+                });
+        };
+
 
         /**
          * Return data user
@@ -76,11 +95,11 @@
         };
 
         /**
-         * Return all user logout
+         * Logout user
          *
          * @param next
          */
-        User.logout = function load(next) {
+        User.logout = function logout(next) {
             $http.get("/api/v1/auth/logout")
                 .success(function (data) {
                     return next(null, data);

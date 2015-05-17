@@ -5,7 +5,7 @@
 (function () {
     var _JSFight = angular.module("JSFight");
 
-    function ChatCtrl($rootScope, $scope, $location, User, Message, $mdToast, $animate, $mdDialog) {
+    function ChatCtrl($rootScope, $scope, $location, User, Message, $mdToast, $animate, $mdDialog, $mdUtil,  $timeout, $log, $mdSidenav) {
 
         $scope.socket = io.connect('//'+ window.location.hostname + ':1337', {"force new connection": true});
 
@@ -13,6 +13,7 @@
         $scope.containerNotif = document.getElementById("notification");
         $scope.form = document.forms.chatForm;
         $scope.user = new User($rootScope.user.username, $rootScope.user.nbParts,  $rootScope.user.nbWins,  $rootScope.user.nbLoss, $rootScope.user.id);
+        $scope.AllUsers = [];
         $scope.usersOnline = [];
         $scope.ChatMessages = [];
 
@@ -25,6 +26,15 @@
             top: false,
             left: true,
             right: false
+        };
+
+        $scope.toggleRight = buildToggler('right');
+
+        $scope.close = function () {
+            $mdSidenav('right').close()
+                .then(function () {
+                    $log.debug("close RIGHT is done");
+                });
         };
 
         /**
@@ -230,11 +240,37 @@
             }
         }
 
+        /**
+         * Build handler to open/close a SideNav; when animation finishes
+         * report completion in console
+         */
+        function buildToggler(navID) {
+            var debounceFn =  $mdUtil.debounce(function(){
+                $mdSidenav(navID)
+                    .toggle()
+                    .then(function () {
+                        $log.debug("toggle " + navID + " is done");
+                    });
+            },300);
+            return debounceFn;
+        }
+
+        User.all(function (err, $users) {
+            if(err) {
+                console.log(err);
+            }
+
+            $users.forEach(function($user) {
+                $scope.AllUsers.push(new User($user.username, $user.nbParts, $user.nbWins, $user.nbLoss, $user._id));
+            });
+
+        });
+
     }
 
 
     /** Angular.JS Dependency Injection **/
-    ChatCtrl.$inject = ["$rootScope", "$scope", "$location", "User", "Message", "$mdToast", "$animate", "$mdDialog"];
+    ChatCtrl.$inject = ["$rootScope", "$scope", "$location", "User", "Message", "$mdToast", "$animate", "$mdDialog", "$mdUtil", "$timeout", "$log", "$mdSidenav"];
 
     /** Angular.JS Controller Registration **/
     _JSFight.controller("ChatCtrl", ChatCtrl);
