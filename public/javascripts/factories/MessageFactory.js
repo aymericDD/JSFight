@@ -13,16 +13,6 @@
             this.id = id;
         }
 
-        Message.prototype.getAllMessages = function(){
-            $http.get("/api/v1/auth/logout")
-                .success(function (data) {
-                    return next(null, data);
-                })
-                .error(function (data) {
-                    return next(data, null);
-                });
-        };
-
         return Message;
     }
 
