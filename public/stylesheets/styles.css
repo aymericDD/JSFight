@@ -6,6 +6,11 @@
   text-align: left;
 }
 
+/* line 8, ../sass/_lobby.scss */
+#content-chat {
+  height: 350px;
+}
+
 /* line 1, ../sass/_game.scss */
 #game {
   margin: auto;
