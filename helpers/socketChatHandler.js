@@ -98,9 +98,7 @@ module.exports = function (io) {
         });
 
         socket.on("QUICK_FIGHT", function(sender){
-            getRandomUserOnline(sender, function(receiver) {
-                receiver.emit("INVITATION_FIGHT", {user: user, socketId: socket.id});
-            });
+            getReceiverOnline(sender);
         });
 
         socket.on("SINGLE_FIGHT", function(receiverId){
@@ -140,18 +138,40 @@ module.exports = function (io) {
          * @param callback
          * @returns {*}
          */
-        function getRandomUserOnline(sender, callback) {
+        function getReceiverOnline(sender) {
             if(usersOnline.length > 1) {
-                var randomUser = usersOnline[Math.floor(Math.random()*usersOnline.length)];
-                var receiver = usersPossibleFight[randomUser.id];
-                if(sender.id === randomUser.id) {
-                    return getRandomUserOnline(sender, callback);
-                }else {
-                    return callback(receiver);
-                }
+                return getSimilarUser(sender, sender.nbWins, sender.nbWins);
             }
             return false;
         };
+
+        /**
+         * Get similar user by nbWins
+         *
+         * @param sender
+         * @param nbWinsNegative
+         * @param nbWinsPositive
+         * @param next
+         * @returns {*}
+         */
+        function getSimilarUser(sender, nbWinsNegative, nbWinsPositive) {
+            var SimilarUser = false;
+            usersOnline.some(function ($user, index) {
+                if ($user.id !== sender.id && ($user.nbWins === nbWinsNegative || $user.nbWins === nbWinsPositive)) {
+                    return SimilarUser = $user;
+                }
+            });
+
+            if (SimilarUser) {
+                var receiver = usersPossibleFight[SimilarUser.id];
+                if(receiver) {
+                    return receiver.emit("INVITATION_FIGHT", {user: user, socketId: socket.id});
+                }
+                return false;
+            }
+
+            return getSimilarUser(sender, --nbWinsNegative, ++nbWinsPositive);
+        }
 
         function removeUserToArray($user, $array) {
             var indexUser = $array.indexOf($user);
