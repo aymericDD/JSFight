@@ -1,0 +1,45 @@
+div(ng-controller="LoginCtrl" layout="row" flex class="container" id="login")
+   div(flex offset="33" class="md-whiteframe-z1")
+      md-toolbar(layout-align="center center")
+         h3 {{ 'LOGIN_TITLE' | translate }}
+      md-toolbar(class="md-warn" ng-show="message" layout-align="center center")
+         span(class="flex") {{ message }}
+      md-content(class="md-padding")
+            md-progress-linear(md-mode="indeterminate" ng-if="loadForm")
+            md-tabs(md-dynamic-height md-border-bottom)
+              md-tab(label="Login")
+                  md-content(layout-padding)
+                     form(name="authForm" ng-submit="doLogin()")
+                        md-input-container
+                           label(for="usernameInput") {{ 'LOGIN_USERNAME' | translate }}
+                           input(md-maxlength="30" required type="text" id="usernameInput" ng-model="user.username")
+                           div(ng-messages="user.username.$error")
+                              div(ng-message="required") This is required.
+                              div(ng-message="md-maxlength") The name has to be less than 30 characters long.
+                        md-input-container
+                           label(for="passwordInput") {{ 'LOGIN_PASSWORD' | translate }}
+                           input(type="password" required id="passwordInput" ng-model="user.password")
+                           div(ng-messages="user.password.$error")
+                              div(ng-message="required") This is required.
+                        md-button(type="submit" class="md-raised md-primary") {{ 'LOGIN_LOGIN' | translate }}
+              md-tab(label="Register")
+                  md-content(layout-padding)
+                     form(name="registerForm" ng-submit="doRegister()")
+                        md-input-container
+                           label(for="usernameInput") {{ 'LOGIN_USERNAME' | translate }}
+                           input(md-maxlength="30" required type="text" id="usernameInput" ng-model="user.username")
+                           div(ng-messages="user.username.$error")
+                              div(ng-message="required") This is required.
+                              div(ng-message="md-maxlength") The name has to be less than 30 characters long.
+                        md-input-container
+                           label(for="passwordInput") {{ 'LOGIN_PASSWORD' | translate }}
+                           input(type="password" required id="passwordInput" ng-model="user.password")
+                           div(ng-messages="user.password.$error")
+                              div(ng-message="required") This is required.
+                        md-input-container
+                           label(for="passwordInputCheck") Retaper le mot de passe
+                           input(type="password" required id="passwordInputCheck" ng-model="user.passwordCheck")
+                           div(ng-messages="user.passwordCheck.$error")
+                              div(ng-message="required") This is required.
+                        md-button(type="submit" class="md-raised md-primary") {{ 'LOGIN_REGISTER' | translate }}
+   div(flex)

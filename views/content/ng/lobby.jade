@@ -1,0 +1,50 @@
+div(layout="row" flex layout-margin)
+   div(layout="column" flex id="content-fight" layout-align="top top")
+        md-button(type="button" class="button-fight md-warn md-raised" ng-click="quickFight()") {{ "BTN_FIGHT" | translate }}
+        div(layout="column" flex id="notification")
+   div(layout="column" flex id="content-chat" class="md-whiteframe-z1")
+        md-toolbar(layout-align="center center")
+            span(class="flex") {{ "CHAT_TITLE" | translate }}
+        div(layout="column" flex id="chatMessages" )
+           md-content(ng-if="loading" layout="row" flex layout-align="center center")
+                md-progress-circular(md-mode="indeterminate" )
+           md-list
+               md-list-item(class="md-1-line" ng-repeat="ChatMessage in ChatMessages track by $index")
+                    div(class="md-list-item-text")
+                        strong {{ ChatMessage.username }}:&nbsp;
+                        span {{ ChatMessage.message }}
+                    md-divider(ng-if="!$last")
+        form(name="chatForm" ng-submit="sendMessage()" layout-padding)
+            md-input-container
+                 label(for="message") {{ "CHAT_SEND" | translate }}
+                 input(type="text", name="message", id="message" class="form-control")
+   div(layout="column" flex id="content-online")
+       md-toolbar(layout-align="center center")
+            span(class="flex") {{ "CHAT_USERS_ONLINE" | translate }}
+       md-content(ng-if="loading" layout="row" flex layout-align="center center")
+           md-progress-circular(md-mode="indeterminate" )
+       md-content(layout="column" flex)
+           md-list
+                md-list-item(ng-repeat="userOnline in usersOnline track by $index" ng-click="singleFight(userOnline.id)")
+                    p(ng-if="userOnline.id !== user.id") {{ userOnline.username }}
+                    strong(ng-if="userOnline.id === user.id") {{ userOnline.username }}
+                    md-divider(ng-if="!$last")
+    md-sidenav(class="md-sidenav-right md-whiteframe-z2" md-component-id="right")
+        md-toolbar(class="md-theme-light")
+            h1(class="md-toolbar-tools") {{ "SIDENAV_TITLE" | translate }}
+        md-content(layout-padding)
+            md-input-container
+                label(for="UserFilter") Nom utilisateur
+                input(md-maxlength="30" type="text" id="UserFilter" ng-model="query")
+            md-select(placeholder="Pick" ng-model="order" layout-align="top top")
+                md-option(value="username") Nom
+                md-option(value="nbParts") Nombres parties
+                md-option(value="nbWins") Nombres victoires
+                md-option(value="nbLoss") Nombres defaites
+            md-list
+                md-list-item(ng-repeat="User in AllUsers | filter:{username: query} | orderBy: order: true" ng-click="showAlert(User)")
+                    strong(class="md-raised md-warn" ng-if="User.id === user.id") {{ User.username }}
+                    span(class="md-raised" ng-if="User.id !== user.id") {{ User.username }}
+                    md-divider(ng-if="!$last")
+            md-button(ng-click="close()" class="md-primary") {{ "SIDENAV_BUTTON" | translate }}
+md-button(ng-click="toggleRight()" class="md-primary md-fab md-fab-bottom-right") Stats

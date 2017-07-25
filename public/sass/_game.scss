@@ -1,0 +1,14 @@
+#game {
+  margin: auto;
+  display: block;
+  position: relative;
+  width: 800px;
+  height: 600px;
+}
+
+#fight, #game_over {
+  display: none;
+  position: absolute;
+  top: 250px;
+  left: 150px;
+}

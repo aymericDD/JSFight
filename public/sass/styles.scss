@@ -1,14 +1,5 @@
-// Import Bootstrap Compass integration
-@import "bootstrap-compass";
+@import "header";
 
-// Import custom Bootstrap variables
-@import "bootstrap-variables";
+@import "lobby";
 
-// Import Bootstrap for Sass
-@import "bootstrap";
-
-div {
-  h1 {
-    color: red;
-  }
-}
+@import "game";
